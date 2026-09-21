@@ -1,0 +1,42 @@
+# 敏感文件
+.env
+*.db
+*.pkl
+logs/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.py[cod]
+*$py.class
+
+# 虚拟环境
+.venv/
+venv/
+ENV/
+env/
+
+# 模型文件（太大，Streamlit Cloud 会超时）
+knowledge/models/
+*.index
+*.bin
+sentence_transformers/
+
+# 数据库文件（太大）
+data/database/*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# 日志
+*.log
+
+# 临时文件
+*.tmp
+*.bak
+data/analysis_output/

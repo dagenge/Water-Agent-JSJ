@@ -6,7 +6,13 @@ from langchain_openai import ChatOpenAI
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+# Streamlit Cloud Secrets 兼容：优先读取 st.secrets，回退到环境变量
+try:
+    import streamlit as st
+    DEEPSEEK_API_KEY = st.secrets.get("DEEPSEEK_API_KEY") or os.getenv("DEEPSEEK_API_KEY")
+except (ImportError, FileNotFoundError):
+    DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "60"))
@@ -37,7 +43,11 @@ BTPZH_SHP = r"H:\LMScore\lms-core\resources\Biye\ArcGIS数据\BtPzh.shp"
 
 def build_llm(temperature: float = 0.1, max_tokens: int = 4096) -> ChatOpenAI:
     if not DEEPSEEK_API_KEY:
-        raise ValueError("DEEPSEEK_API_KEY not set. Copy .env.example to .env and fill in your key.")
+        raise ValueError(
+            "⚠️ DeepSeek API Key 未配置\n\n"
+            "本地运行：复制 .env.example 为 .env 并填入密钥\n"
+            "Streamlit Cloud：在 App Settings → Secrets 中配置 DEEPSEEK_API_KEY"
+        )
     return ChatOpenAI(
         model=DEEPSEEK_MODEL,
         api_key=DEEPSEEK_API_KEY,

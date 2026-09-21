@@ -141,7 +141,7 @@ with tab1:
         - 在线 Demo 仅供功能展示
         - 如需完整体验，请联系我提供临时 API Key
 
-        **GitHub 仓库：** [点击查看](https://github.com/dagenge/Water-Agent-Product)
+        **GitHub 仓库：** [点击查看](https://github.com/dagenge/Water-Agent-JSJ)
         """)
     else:
         # 会话状态初始化
@@ -466,7 +466,7 @@ st.markdown("""
 <div style="text-align: center; color: #6B7280; padding: 20px;">
     <p>🌊 广东省流域水文智能 Agent | 基于 LangGraph + DeepSeek</p>
     <p>
-        <a href="https://github.com/dagenge/Water-Agent-Product" target="_blank">📦 GitHub</a> |
+        <a href="https://github.com/dagenge/Water-Agent-JSJ" target="_blank">📦 GitHub</a> |
         <a href="mailto:your-email@example.com">✉️ 联系我</a>
     </p>
 </div>

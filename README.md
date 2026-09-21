@@ -18,7 +18,7 @@
 | 代码执行 | 隔离子进程 + 60s 超时（pandas / matplotlib / numpy） |
 | 前端 | Streamlit 5-Tab 大屏 |
 | 地图 | Leaflet 1.9.4（本地）+ 高德卫星瓦片 |
-| 数据库 | SQLite（DQH 事件表 + BtPzh 宽表） |
+| 数据库 | PostgreSQL（DQH 事件表 + BtPzh 宽表） |
 | 后端 API | FastAPI（异步 `/chat`） |
 
 ## 项目结构

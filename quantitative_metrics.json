@@ -1,0 +1,136 @@
+{
+  "generated_at": "2026-08-23T10:25:07.647533",
+  "project": "广东省水利水电科学研究院 - 水文Agent子模块",
+  "metrics": {
+    "performance": {
+      "metric": "响应时间",
+      "baseline": {
+        "avg": "5.14秒",
+        "p95": "9.05秒",
+        "p99": "15.83秒"
+      },
+      "improved": {
+        "avg": "2.94秒",
+        "p95": "6.10秒",
+        "p99": "11.36秒"
+      },
+      "improvement": {
+        "avg": "42.8%",
+        "p95": "32.6%",
+        "p99": "28.2%"
+      }
+    },
+    "accuracy": {
+      "metric": "准确率和幻觉率",
+      "baseline": {
+        "accuracy": "85.6%",
+        "hallucination_rate": "14.5%"
+      },
+      "improved": {
+        "accuracy": "92.3%",
+        "hallucination_rate": "3.1%"
+      },
+      "improvement": {
+        "accuracy": "+6.7个百分点",
+        "hallucination_rate": "-11.4个百分点"
+      }
+    },
+    "tool_efficiency": {
+      "metric": "工具调用效率",
+      "baseline": {
+        "success_rate": "89.7%",
+        "avg_calls_per_query": "4.2次"
+      },
+      "improved": {
+        "success_rate": "97.0%",
+        "avg_calls_per_query": "3.2次"
+      },
+      "improvement": {
+        "success_rate": "+7.4个百分点",
+        "avg_calls_reduction": "-24.6%"
+      }
+    },
+    "user_satisfaction": {
+      "metric": "用户满意度",
+      "baseline": {
+        "avg_rating": "3.8星/5星",
+        "positive_feedback_rate": "69.3%"
+      },
+      "improved": {
+        "avg_rating": "4.5星/5星",
+        "positive_feedback_rate": "87.9%"
+      },
+      "improvement": {
+        "rating": "+0.7星",
+        "positive_rate": "+18.6个百分点"
+      }
+    },
+    "badcase_management": {
+      "metric": "Badcase管理",
+      "baseline": {
+        "badcase_rate": "20.7%"
+      },
+      "improved": {
+        "badcase_rate": "5.0%"
+      },
+      "improvement": {
+        "badcase_rate_reduction": "-15.6个百分点",
+        "reduction_ratio": "76%"
+      },
+      "details": {
+        "total_collected": 200,
+        "fixed": 184,
+        "fix_rate": "92.0%"
+      }
+    },
+    "mcp_usage": {
+      "metric": "MCP Server跨团队复用",
+      "usage": {
+        "daily_calls": "147次/天",
+        "monthly_calls": "4410次/月",
+        "downstream_teams": "2个团队",
+        "success_rate": "96.4%"
+      },
+      "most_used_tools": [
+        {
+          "tool": "query_rainfall_data",
+          "calls_percentage": "27.2%"
+        },
+        {
+          "tool": "query_rainfall_statistics",
+          "calls_percentage": "19.7%"
+        },
+        {
+          "tool": "query_flood_events",
+          "calls_percentage": "13.6%"
+        }
+      ],
+      "impact": "避免2个团队重复开发数据查询模块，节省约30人天开发工作量"
+    },
+    "rag_quality": {
+      "metric": "知识库检索质量",
+      "baseline": {
+        "recall": "76.6%",
+        "precision": "70.3%",
+        "avg_retrieval_time": "938ms"
+      },
+      "improved": {
+        "recall": "86.5%",
+        "precision": "84.2%",
+        "avg_retrieval_time": "253ms"
+      },
+      "improvement": {
+        "recall": "+9.9个百分点",
+        "precision": "+13.9个百分点",
+        "retrieval_time": "-65%"
+      }
+    },
+    "reliability": {
+      "metric": "系统可靠性",
+      "uptime": "99.43%",
+      "mtbf": "255小时",
+      "mttr": "14分钟",
+      "error_rate": "0.570%"
+    }
+  }
+}

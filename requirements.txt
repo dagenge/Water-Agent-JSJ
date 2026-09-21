@@ -1,0 +1,25 @@
+langchain>=0.3.0
+langchain-openai>=0.3.0
+langchain-community>=0.3.0
+langchain-text-splitters>=0.3.0
+langgraph>=0.3.0
+# 真实语义向量（替代字符hash），~84MB 模型首次自动下载
+sentence-transformers>=3.0.0
+faiss-cpu>=1.8.0
+rank-bm25>=0.2.2
+openai>=1.50.0
+python-dotenv>=1.0.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+streamlit>=1.40.0
+plotly>=6.0.0
+pandas>=2.2.0
+numpy>=1.26.0
+openpyxl>=3.1.0
+xlrd>=2.0.1
+geopandas>=1.0.0
+shapely>=2.0.0
+pyproj>=3.6.0
+matplotlib>=3.9.0
+pydantic>=2.0.0
+fastmcp>=3.4.0

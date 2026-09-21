@@ -12,6 +12,14 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+# 数据库配置检查
+try:
+    from config.database import engine
+    DB_AVAILABLE = True
+except Exception as e:
+    DB_AVAILABLE = False
+    print(f"Database not available: {e}")
+
 from agent.executor import run_agent
 
 # ============================================

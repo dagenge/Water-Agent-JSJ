@@ -1,4 +1,4 @@
-"""精简版 Streamlit Demo - 专为在线部署优化"""
+"""流域水文智能 Agent - Streamlit Demo"""
 
 import json
 import os
@@ -26,7 +26,7 @@ from agent.executor import run_agent
 # 页面配置
 # ============================================
 st.set_page_config(
-    page_title="广东省流域水文智能 Agent",
+    page_title="流域水文智能 Agent",
     page_icon="🌊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -68,8 +68,8 @@ st.markdown("""
 # ============================================
 # 标题栏
 # ============================================
-st.markdown('<div class="main-title">🌊 广东省流域水文智能 Agent</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">基于 LangGraph + DeepSeek 的水利行业垂直 AI 助手</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">🌊 流域水文智能 Agent</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">基于 LangGraph + DeepSeek 的水利行业 AI 助手</div>', unsafe_allow_html=True)
 
 # ============================================
 # 侧边栏
@@ -134,14 +134,13 @@ with tab1:
         st.error("""
         ⚠️ **API Key 未配置**
 
-        本 Demo 需要 DeepSeek API Key 才能运行。
+        本应用需要 DeepSeek API Key 才能运行。
 
-        **对于面试官：**
-        - 本项目已完整实现，可查看 GitHub 代码
-        - 在线 Demo 仅供功能展示
-        - 如需完整体验，请联系我提供临时 API Key
+        **配置方法：**
+        - 本地运行：在 `.env` 文件中设置 `DEEPSEEK_API_KEY`
+        - Streamlit Cloud：在应用设置中配置 Secrets
 
-        **GitHub 仓库：** [点击查看](https://github.com/dagenge/Water-Agent-JSJ)
+        **项目地址：** [GitHub](https://github.com/dagenge/Water-Agent-JSJ)
         """)
     else:
         # 会话状态初始化
@@ -417,45 +416,45 @@ with tab3:
         """)
 
     with doc_tabs[3]:
-        st.subheader("产品迭代历程")
+        st.subheader("技术优化历程")
 
         st.markdown("""
-        ### V1.0 → V5.0 演进路径
+        ### 系统演进过程
 
-        **V1.0（MVP）**
-        - ❌ 意图识别准确率仅 68%
-        - ❌ 用户对结果不信任
+        **初始版本**
+        - 意图识别准确率：68%
+        - 工具调用成功率：82%
 
-        **V2.0（优化工具描述）**
-        - ✅ 补充 `when_to_use` 字段
-        - ✅ 准确率 → 78%（+10%）
+        **工具描述优化**
+        - 补充详细的使用场景说明
+        - 准确率提升至 78%
 
-        **V3.0（加入 Few-shot）**
-        - ✅ 20 个示例，准确率 → 88%（+10%）
-        - ✅ 工具调用成功率 82% → 94%
+        **示例学习增强**
+        - 引入 20+ 真实案例
+        - 准确率提升至 88%
+        - 工具调用成功率达 94%
 
-        **V4.0（自我纠错）**
-        - ✅ 结果验证机制
-        - ✅ 幻觉率 12% → 4.1%（-8%）
+        **结果验证机制**
+        - 加入自动纠错能力
+        - 幻觉率降至 4.1%
 
-        **V5.0（当前版本）**
-        - ✅ Bad Case 优化
-        - ✅ 准确率 → 92%（+4%）
-        - ✅ 用户满意度 4.5/5
+        **当前版本**
+        - 准确率：92%
+        - 用户满意度：4.5/5
 
         ### 关键优化方法
 
         1. **数据驱动迭代**
-           - 每周分析 Bad Case
-           - A/B 测试验证优化效果
+           - 分析错误案例
+           - A/B 测试验证效果
 
         2. **用户反馈闭环**
-           - 👍/👎 反馈按钮
-           - 点踩后收集详细问题类型
+           - 👍/👎 反馈收集
+           - 问题类型分类统计
 
         3. **Prompt 工程**
-           - 迭代 12 版系统 Prompt
-           - 加入领域知识和约束规则
+           - 持续优化系统提示词
+           - 加入领域知识约束
         """)
 
 # ============================================
@@ -464,10 +463,9 @@ with tab3:
 st.divider()
 st.markdown("""
 <div style="text-align: center; color: #6B7280; padding: 20px;">
-    <p>🌊 广东省流域水文智能 Agent | 基于 LangGraph + DeepSeek</p>
+    <p>🌊 流域水文智能 Agent | 基于 LangGraph + DeepSeek</p>
     <p>
-        <a href="https://github.com/dagenge/Water-Agent-JSJ" target="_blank">📦 GitHub</a> |
-        <a href="mailto:your-email@example.com">✉️ 联系我</a>
+        <a href="https://github.com/dagenge/Water-Agent-JSJ" target="_blank">📦 GitHub</a>
     </p>
 </div>
 """, unsafe_allow_html=True)

@@ -1,11 +1,11 @@
 """
-RAG 知识检索引擎 — 真实语义向量 + BM25 关键词 + RRF 融合
+RAG 知识检索引擎 — 语义向量 + BM25 关键词 + RRF 融合
 
 Embedding 模型：BAAI/bge-small-zh-v1.5（sentence-transformers，~84MB，纯 CPU）
 检索策略：FAISS 向量检索 Top-K + BM25 关键词 Top-K → RRF(k=60) 融合排序
 
-与广东项目的关键区别：
-  - 不再使用字符 n-gram hash；改为 sentence-transformers 真实语义向量
+技术特点：
+  - sentence-transformers 语义向量
   - 向量维度 512（bge-small-zh-v1.5），余弦相似度
   - 模型首次运行自动下载缓存，离线后复用
 """

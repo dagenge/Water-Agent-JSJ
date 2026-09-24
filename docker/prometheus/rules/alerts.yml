@@ -1,0 +1,134 @@
+# Prometheus 告警规则
+
+groups:
+  - name: water_agent_alerts
+    interval: 30s
+    rules:
+      # Agent 查询响应时间告警
+      - alert: HighQueryLatency
+        expr: histogram_quantile(0.95, rate(agent_query_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+          service: water_agent
+        annotations:
+          summary: "Agent 查询响应时间过高"
+          description: "P95 响应时间超过 10 秒，当前值: {{ $value }}s"
+
+      # 工具调用失败率告警
+      - alert: HighToolCallFailureRate
+        expr: |
+          (
+            sum(rate(agent_tool_call_error_total[5m]))
+            /
+            sum(rate(agent_tool_call_total[5m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          service: water_agent
+        annotations:
+          summary: "工具调用失败率过高"
+          description: "失败率超过 10%，当前值: {{ $value | humanizePercentage }}"
+
+      # 查询错误率告警
+      - alert: HighQueryErrorRate
+        expr: |
+          (
+            sum(rate(agent_query_error_total[5m]))
+            /
+            sum(rate(agent_query_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: water_agent
+        annotations:
+          summary: "查询错误率过高"
+          description: "错误率超过 5%，当前值: {{ $value | humanizePercentage }}"
+
+      # Badcase 突增告警
+      - alert: BadcaseSpike
+        expr: rate(agent_badcase_total[10m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          service: water_agent
+        annotations:
+          summary: "Badcase 数量突增"
+          description: "最近 10 分钟 Badcase 增长率: {{ $value }}/min"
+
+      # 活跃会话数异常
+      - alert: TooManyActiveSessions
+        expr: agent_active_sessions > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: water_agent
+        annotations:
+          summary: "活跃会话数过多"
+          description: "当前活跃会话: {{ $value }}，可能存在资源泄露"
+
+      # 一致性校验失败率告警
+      - alert: HighConsistencyCheckFailureRate
+        expr: rate(agent_consistency_check_failures[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: water_agent
+        annotations:
+          summary: "一致性校验失败率过高"
+          description: "失败率: {{ $value }}/min，可能存在数据质量问题"
+
+  - name: postgres_alerts
+    interval: 30s
+    rules:
+      # PostgreSQL 连接数告警
+      - alert: PostgresTooManyConnections
+        expr: pg_stat_database_numbackends > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "PostgreSQL 连接数过多"
+          description: "当前连接数: {{ $value }}，接近最大连接限制"
+
+      # 数据库查询慢告警（需要 postgres_exporter）
+      - alert: SlowQueries
+        expr: rate(pg_stat_statements_mean_exec_time[5m]) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          service: postgres
+        annotations:
+          summary: "数据库查询变慢"
+          description: "平均查询时间: {{ $value }}ms"
+
+  - name: system_alerts
+    interval: 30s
+    rules:
+      # Prometheus 抓取失败
+      - alert: TargetDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "监控目标离线"
+          description: "{{ $labels.job }} ({{ $labels.instance }}) 已离线超过 5 分钟"
+
+      # 磁盘空间告警（需要 node_exporter）
+      - alert: DiskSpaceWarning
+        expr: |
+          (
+            node_filesystem_avail_bytes{mountpoint="/"}
+            /
+            node_filesystem_size_bytes{mountpoint="/"}
+          ) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "磁盘空间不足"
+          description: "可用空间低于 10%，当前: {{ $value | humanizePercentage }}"

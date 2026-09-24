@@ -3,7 +3,7 @@ langchain-openai>=0.3.0
 langchain-community>=0.3.0
 langchain-text-splitters>=0.3.0
 langgraph>=0.3.0
-# 真实语义向量（替代字符hash），~84MB 模型首次自动下载
+# 真实语义向量(替代字符hash),~84MB 模型首次自动下载
 sentence-transformers>=3.0.0
 faiss-cpu>=1.8.0
 rank-bm25>=0.2.2
@@ -23,3 +23,8 @@ pyproj>=3.6.0
 matplotlib>=3.9.0
 pydantic>=2.0.0
 fastmcp>=3.4.0
+
+# 数据库与监控
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0
+prometheus-client>=0.20.0

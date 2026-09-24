@@ -27,6 +27,7 @@ from agent.intent import recognize_intent
 from agent.logger import get_logger
 from agent.tools import ALL_TOOLS
 from knowledge.knowledge_tools import KNOWLEDGE_TOOLS
+from monitoring.prometheus_metrics import metrics_collector
 
 ALL_AGENT_TOOLS = ALL_TOOLS + KNOWLEDGE_TOOLS
 
@@ -228,6 +229,9 @@ def run_agent(
     start = time.time()
     thread_id = session_id or "default"
 
+    # 记录查询开始
+    metrics_collector.record_query_start()
+
     def _emit(stage: str, detail: str = ""):
         if status_callback:
             try:
@@ -237,6 +241,7 @@ def run_agent(
 
     # ── 安全约束：速率限制 ─────────────────────────────────
     if not _check_rate_limit():
+        metrics_collector.record_query_end(intent="RATE_LIMIT", success=False, error="rate_limit_exceeded")
         return {
             "output": f"请求频率过高（{_RATE_LIMIT}次/{_RATE_WINDOW:.0f}s），请稍后再试。",
             "intent": {"intent": "GENERAL", "confidence": 0.0},
@@ -247,6 +252,7 @@ def run_agent(
 
     # ── 安全约束：输入长度 ──────────────────────────────────
     if len(user_input) > MAX_INPUT_LEN:
+        metrics_collector.record_query_end(intent="INPUT_TOO_LONG", success=False, error="input_length_exceeded")
         return {
             "output": f"输入过长（{len(user_input)} 字符，上限 {MAX_INPUT_LEN}），请简化问题。",
             "intent": {"intent": "GENERAL", "confidence": 0.0},
@@ -289,6 +295,7 @@ def run_agent(
             pool.shutdown(wait=not timed_out, cancel_futures=True)
     except concurrent.futures.TimeoutError:
         logger.log_error("agent_execution", "超时")
+        metrics_collector.record_query_end(intent=intent, success=False, error="timeout")
         return {
             "output": f"Agent 执行超时（>{AGENT_TIMEOUT}s），请简化问题或分步查询。",
             "intent": intent_result,
@@ -298,6 +305,7 @@ def run_agent(
         }
     except Exception as e:
         logger.log_error("agent_execution", str(e))
+        metrics_collector.record_query_end(intent=intent, success=False, error=str(e))
         return {
             "output": f"Agent 执行出错：{e}",
             "intent": intent_result,
@@ -322,6 +330,8 @@ def run_agent(
 
     for tc in tool_calls_log:
         logger.log_tool_call(tc["tool"], {}, tc.get("output", ""))
+        # 记录工具调用指标
+        metrics_collector.record_tool_call(tc["tool"], success=True)
 
     # 5. 结果自校验
     _emit("correct", "结果自校验...")
@@ -330,6 +340,9 @@ def run_agent(
     total_ms = (time.time() - start) * 1000
     logger.log_llm("full_cycle", user_input, corrected, total_ms)
     logger.log_final_output(corrected)
+
+    # 记录查询结束和指标
+    metrics_collector.record_query_end(intent=intent, success=True)
 
     return {
         "output": corrected,

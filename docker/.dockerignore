@@ -1,0 +1,53 @@
+# Docker 部署忽略文件
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+
+# 数据文件（避免打包大文件）
+data/database/*.db
+data/*.csv
+data/*.json
+
+# 日志
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 测试
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 临时文件
+*.tmp
+.DS_Store
+Thumbs.db
+
+# 环境变量（敏感信息）
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
+
+# 文档草稿
+docs/drafts/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Docker
+docker-compose.override.yml

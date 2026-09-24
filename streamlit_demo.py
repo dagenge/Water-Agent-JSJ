@@ -21,6 +21,7 @@ except Exception as e:
     print(f"Database not available: {e}")
 
 from agent.executor import run_agent
+from monitoring.prometheus_metrics import metrics_collector
 
 # ============================================
 # 页面配置
@@ -194,6 +195,25 @@ with tab1:
                                 "执行步骤": result["plan"],
                                 "工具调用": [tc["tool"] for tc in result["intermediate_steps"]]
                             })
+
+                        # 用户反馈收集
+                        feedback_col1, feedback_col2 = st.columns([1, 5])
+                        with feedback_col1:
+                            if st.button("👍", key=f"good_{len(st.session_state.messages)}"):
+                                metrics_collector.record_feedback(
+                                    query=prompt,
+                                    rating=5,
+                                    feedback_type="positive"
+                                )
+                                st.success("感谢反馈！")
+                        with feedback_col2:
+                            if st.button("👎", key=f"bad_{len(st.session_state.messages)}"):
+                                metrics_collector.record_feedback(
+                                    query=prompt,
+                                    rating=1,
+                                    feedback_type="negative"
+                                )
+                                st.info("感谢反馈，我们会持续改进")
                     except Exception as e:
                         error_msg = f"抱歉，处理您的请求时出现错误：{str(e)}"
                         st.error(error_msg)

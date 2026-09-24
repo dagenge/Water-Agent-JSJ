@@ -148,12 +148,17 @@ with tab1:
         if "messages" not in st.session_state:
             st.session_state.messages = []
 
+        # 为每个 Streamlit 会话生成唯一 session_id
+        if "chat_session_id" not in st.session_state:
+            import uuid
+            st.session_state.chat_session_id = f"demo_{uuid.uuid4().hex[:8]}"
+
         # 示例问题
         st.markdown("**💡 试试这些问题：**")
         example_cols = st.columns(3)
         examples = [
-            "查询武汉站最近一周水位变化",
-            "对比武汉站和宜昌站的流量",
+            "查询棠荆站最近一周水位变化",
+            "对比棠荆站和河子口站的流量",
             "超警戒水位应急流程是什么"
         ]
 
@@ -199,7 +204,7 @@ with tab1:
                     try:
                         result = run_agent(
                             user_input=prompt,
-                            session_id="demo_session"
+                            session_id=st.session_state.chat_session_id
                         )
                         response = result["output"]
                         st.markdown(response)
@@ -243,7 +248,7 @@ with tab2:
     with demo_tab1:
         st.subheader("功能 1：实时数据查询")
         st.markdown("""
-        **场景：** 水文预报员需要快速查询武汉站当前水位
+        **场景：** 水文预报员需要快速查询站点当前水位
 
         **传统方式：**
         1. 登录水文数据库系统（2 分钟）
@@ -254,8 +259,8 @@ with tab2:
         """)
 
         st.code("""
-用户："查武汉站今天水位"
-Agent："武汉站今日 08:00 水位 15.32 米（正常范围）
+用户："查棠荆站今天水位"
+Agent："棠荆站今日 08:00 水位 15.32 米（正常范围）
        📊 数据来源：实时监测系统
        🕒 更新时间：2024-07-15 08:00"
         """, language="text")
@@ -284,9 +289,9 @@ Agent："武汉站今日 08:00 水位 15.32 米（正常范围）
         """)
 
         st.code("""
-用户："对比武汉站和宜昌站最近一周水位"
+用户："对比棠荆站和宜昌站最近一周水位"
 Agent：[自动生成对比表格 + 趋势折线图]
-       "分析：武汉站呈上涨趋势，宜昌站平稳..."
+       "分析：棠荆站呈上涨趋势，宜昌站平稳..."
         """, language="text")
 
         # 模拟图表
@@ -294,7 +299,7 @@ Agent：[自动生成对比表格 + 趋势折线图]
         fig.add_trace(go.Scatter(
             x=["07-08", "07-09", "07-10", "07-11", "07-12", "07-13", "07-14"],
             y=[15.1, 15.2, 15.4, 15.5, 15.3, 15.2, 15.4],
-            name="武汉站",
+            name="棠荆站",
             line=dict(color="#0d6efd", width=3)
         ))
         fig.add_trace(go.Scatter(
@@ -304,7 +309,7 @@ Agent：[自动生成对比表格 + 趋势折线图]
             line=dict(color="#198754", width=3)
         ))
         fig.update_layout(
-            title="武汉站 vs 宜昌站水位对比",
+            title="棠荆站 vs 河子口站水位对比",
             xaxis_title="日期",
             yaxis_title="水位 (m)",
             height=400

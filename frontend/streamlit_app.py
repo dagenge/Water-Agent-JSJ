@@ -169,7 +169,7 @@ def render_overview():
 
     html = f"""<!DOCTYPE html><html>
 <head>
-<style>body{{margin:0}}#map{{width:100%;height:680px}}</style>
+<style>body{{margin:0}}#map{{width:100%;height:1020px}}</style>
 <style>{leaflet_css}</style>
 </head><body>
 <div id="map"></div>
@@ -185,7 +185,7 @@ if(allLayers.length>0){{map.fitBounds(L.featureGroup(allLayers).getBounds().pad(
 </script></body></html>"""
 
     import streamlit.components.v1 as components
-    components.html(html, height=700, scrolling=False)
+    components.html(html, height=1050, scrolling=False)
 
 
 # ─── Tab 2：智能对话 ─────────────────────────────────────────
@@ -248,7 +248,7 @@ def render_dqh():
     c1, c2, c3 = st.columns(3)
     with c1:
         # 流域选择
-        basin_opts = ["定曲河 (dqh)", "布吉河 (bjh)", "棠荆 (tj)", "尖山 (js)", "白盆珠水库 (bpz)"]
+        basin_opts = ["定曲河 (dqh)", "布吉河 (bjh)", "棠荆 (tj)", "尖山 (js)", "河子口 (hzk)", "白盆珠水库 (bpz)"]
         basin_sel = st.selectbox("选择流域", basin_opts)
         basin_id = basin_sel.split("(")[1].strip(")")
 
@@ -262,7 +262,7 @@ def render_dqh():
             event_codes = re.findall(r"\b(\d{8,12})\b", events_raw)
         else:
             # 广东流域：列出Flood目录下的CSV文件
-            flood_dir = GUANGDONG_BASINS[basin_id]["station_csv"].replace("StationProperty.csv", "Flood")
+            flood_dir = GUANGDONG_BASINS[basin_id]["flood_dir"]
             if os.path.exists(flood_dir):
                 event_codes = sorted([f.replace(".csv", "") for f in os.listdir(flood_dir) if f.endswith(".csv") and re.match(r"\d{10}", f[:10])])
             else:
@@ -297,7 +297,7 @@ def render_dqh():
                 })
             else:
                 # 广东流域：读取CSV文件
-                flood_csv = GUANGDONG_BASINS[q["basin_id"]]["station_csv"].replace("StationProperty.csv", f"Flood/{q['event_code']}.csv")
+                flood_csv = os.path.join(GUANGDONG_BASINS[q["basin_id"]]["flood_dir"], f"{q['event_code']}.csv")
                 if os.path.exists(flood_csv):
                     df_raw = pd.read_csv(flood_csv, encoding="utf-8")
                     raw = f"## {GUANGDONG_BASINS[q['basin_id']]['name']} {q['event_code']} 事件数据\n" + df_raw.head(200).to_markdown(index=False)
@@ -319,7 +319,7 @@ def render_dqh():
             if df is not None:
                 # DQH 流域有 TIME 列，广东流域只有 ID 列
                 x_col = "TIME" if "TIME" in df.columns else "ID"
-                rain_cols = [c for c in df.columns if c not in [x_col, "Q"]]
+                rain_cols = [c for c in df.columns if c not in [x_col, "Q", "Z"]]
 
                 if rain_cols:
                     fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -345,7 +345,7 @@ def render_dqh():
                 # 广东流域：计算统计
                 if os.path.exists(flood_csv):
                     df_raw = pd.read_csv(flood_csv, encoding="utf-8")
-                    rain_cols = [c for c in df_raw.columns if c not in ["ID", "Q", "TIME"]]
+                    rain_cols = [c for c in df_raw.columns if c not in ["ID", "Q", "Z"]]
                     stats = []
                     for col in rain_cols:
                         vals = pd.to_numeric(df_raw[col], errors="coerce")
@@ -356,6 +356,13 @@ def render_dqh():
                             "有雨时次": (vals > 0).sum()
                         })
                     raw2 = f"## {GUANGDONG_BASINS[q['basin_id']]['name']} {q['event_code']} 降雨统计\n" + pd.DataFrame(stats).to_markdown(index=False)
+
+                    # 流量统计
+                    if "Q" in df_raw.columns:
+                        q_vals = pd.to_numeric(df_raw["Q"], errors="coerce")
+                        q_max = q_vals.max()
+                        q_mean = q_vals.mean()
+                        raw2 += f"\n\n### 流量统计\n- 最大流量：{q_max:.2f} m³/s\n- 平均流量：{q_mean:.2f} m³/s"
                 else:
                     raw2 = "数据文件不存在"
 

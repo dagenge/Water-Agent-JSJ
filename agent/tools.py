@@ -1,8 +1,8 @@
 """
 Agent 工具集 — 数据库查询工具 + Python 代码执行工具
 
-工具清单（8个）：
-  数据查询（7）：
+工具清单（11个）：
+  数据查询（10）：
     query_basin_list           — 列出所有流域
     query_station_list         — 查询站点列表
     query_dqh_events           — 查询 DQH 汛期事件
@@ -10,6 +10,9 @@ Agent 工具集 — 数据库查询工具 + Python 代码执行工具
     query_dqh_statistics       — 查询 DQH 事件降雨统计
     query_btpzh_rainfall       — 按时间范围查询 BtPzh 降雨
     query_btpzh_statistics     — BtPzh 时段统计（累计/极值）
+    query_guangdong_events     — 查询广东流域汛期事件列表
+    query_guangdong_rainfall   — 查询广东流域事件降雨时序（含流量Q）
+    query_guangdong_statistics — 查询广东流域事件降雨和流量统计
 
   代码执行（1）：
     execute_python_analysis    — 执行 pandas/matplotlib 数据分析代码，
@@ -28,7 +31,7 @@ from typing import Any
 
 from langchain_core.tools import tool
 
-from agent.config import DATABASE_PATH, BASIN_NAME_MAP, ANALYSIS_OUTPUT_DIR
+from agent.config import DATABASE_PATH, BASIN_NAME_MAP, ANALYSIS_OUTPUT_DIR, GUANGDONG_BASINS
 
 
 # ─── 安全约束常量 ─────────────────────────────────────────────
@@ -323,6 +326,137 @@ def query_btpzh_statistics(
     return "\n".join(lines)
 
 
+@tool
+def query_guangdong_events(basin_id: str) -> str:
+    """查询广东流域（布吉河、棠荆、尖山、河子口、白盆珠水库）的汛期事件列表。
+    basin_id: bjh, tj, js, hzk, bpz 之一。
+    返回该流域所有事件代码列表。"""
+    if basin_id not in GUANGDONG_BASINS:
+        return f"basin_id 无效：{basin_id}，仅支持 {', '.join(GUANGDONG_BASINS.keys())}"
+
+    flood_dir = GUANGDONG_BASINS[basin_id].get("flood_dir", "")
+    if not flood_dir or not os.path.exists(flood_dir):
+        return f"{GUANGDONG_BASINS[basin_id]['name']} 的 Flood 目录不存在：{flood_dir}"
+
+    try:
+        files = [f for f in os.listdir(flood_dir) if f.endswith(".csv")]
+        event_codes = sorted([f.replace(".csv", "") for f in files if re.match(r"\d{10}", f[:10])])
+
+        if not event_codes:
+            return f"{GUANGDONG_BASINS[basin_id]['name']} 暂无汛期事件数据。"
+
+        lines = [
+            f"## {GUANGDONG_BASINS[basin_id]['name']} 汛期事件列表",
+            f"共 {len(event_codes)} 个事件：",
+            "",
+            "| 序号 | 事件代码 | 年份 |",
+            "|------|---------|------|",
+        ]
+        for idx, code in enumerate(event_codes, 1):
+            year = code[:4] if len(code) >= 4 else "—"
+            lines.append(f"| {idx} | {code} | {year} |")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"读取事件列表失败：{e}"
+
+
+@tool
+def query_guangdong_rainfall(basin_id: str, event_code: str, limit: int = 200) -> str:
+    """查询广东流域指定汛期事件的降雨时序数据（含流量Q列）。
+    basin_id: bjh, tj, js, hzk, bpz 之一。
+    event_code: 事件代码，如 2003091505。
+    limit: 最多返回行数，默认 200。
+    返回时序表格，包含 ID、Q（流量）、各站点降雨列、Z列。"""
+    if basin_id not in GUANGDONG_BASINS:
+        return f"basin_id 无效：{basin_id}"
+
+    flood_dir = GUANGDONG_BASINS[basin_id].get("flood_dir", "")
+    csv_path = os.path.join(flood_dir, f"{event_code}.csv")
+
+    if not os.path.exists(csv_path):
+        return f"事件 {event_code} 的数据文件不存在：{csv_path}"
+
+    try:
+        import pandas as pd
+        df = pd.read_csv(csv_path, encoding="utf-8")
+
+        if len(df) > limit:
+            df = df.head(limit)
+            truncated = True
+        else:
+            truncated = False
+
+        lines = [
+            f"## {GUANGDONG_BASINS[basin_id]['name']} {event_code} 事件时序数据",
+            df.to_markdown(index=False),
+        ]
+        if truncated:
+            lines.append(f"\n_（表格已截断，仅显示前 {limit} 行）_")
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"读取事件数据失败：{e}"
+
+
+@tool
+def query_guangdong_statistics(basin_id: str, event_code: str) -> str:
+    """查询广东流域指定汛期事件的降雨和流量统计。
+    basin_id: bjh, tj, js, hzk, bpz 之一。
+    event_code: 事件代码。
+    返回各站点累计雨量、最大时段雨量、有雨时次，以及流量Q的最大值和平均值。"""
+    if basin_id not in GUANGDONG_BASINS:
+        return f"basin_id 无效：{basin_id}"
+
+    flood_dir = GUANGDONG_BASINS[basin_id].get("flood_dir", "")
+    csv_path = os.path.join(flood_dir, f"{event_code}.csv")
+
+    if not os.path.exists(csv_path):
+        return f"事件 {event_code} 的数据文件不存在"
+
+    try:
+        import pandas as pd
+        df = pd.read_csv(csv_path, encoding="utf-8")
+
+        # 排除 ID, Z 列，提取 Q 和降雨列
+        exclude_cols = ["ID", "Z"]
+        data_cols = [c for c in df.columns if c not in exclude_cols]
+
+        lines = [
+            f"## {GUANGDONG_BASINS[basin_id]['name']} {event_code} 统计",
+            "",
+            "### 降雨统计",
+            "| 站点 | 累计雨量(mm) | 最大时段雨量(mm) | 有雨时次 |",
+            "|------|-------------|----------------|----------|",
+        ]
+
+        rain_cols = [c for c in data_cols if c != "Q"]
+        for col in rain_cols:
+            vals = pd.to_numeric(df[col], errors="coerce")
+            total = vals.sum()
+            mx = vals.max()
+            cnt = (vals > 0).sum()
+            lines.append(f"| {col} | {total:.1f} | {mx:.1f} | {cnt} |")
+
+        # 流量统计
+        if "Q" in df.columns:
+            q_vals = pd.to_numeric(df["Q"], errors="coerce")
+            q_max = q_vals.max()
+            q_mean = q_vals.mean()
+            q_records = len(q_vals.dropna())
+            lines.extend([
+                "",
+                "### 流量统计",
+                f"- 最大流量：{q_max:.2f} m³/s",
+                f"- 平均流量：{q_mean:.2f} m³/s",
+                f"- 有效记录数：{q_records}",
+            ])
+
+        return "\n".join(lines)
+    except Exception as e:
+        return f"统计计算失败：{e}"
+
+
 # ─── 代码执行工具 ────────────────────────────────────────────
 
 _EXEC_PRELUDE = '''
@@ -463,5 +597,8 @@ ALL_TOOLS = [
     query_dqh_statistics,
     query_btpzh_rainfall,
     query_btpzh_statistics,
+    query_guangdong_events,
+    query_guangdong_rainfall,
+    query_guangdong_statistics,
     execute_python_analysis,
 ]

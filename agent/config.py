@@ -51,26 +51,31 @@ GUANGDONG_BASINS = {
         "name": "布吉河",
         "station_csv": r"H:\Biye\Data\Model\BJH\modelfile\StationProperty.csv",
         "watershed_shp": r"H:\Biye\Data\Model\BJH\watersh.shp",
+        "flood_dir": r"H:\Biye\Data\Model\BJH\modelfile\Flood",
     },
     "tj": {
         "name": "棠荆",
         "station_csv": r"H:\Biye\Data\Model\TJ\modelfile\StationProperty.csv",
         "watershed_shp": r"H:\Biye\Data\Model\TJ\watersh.shp",
+        "flood_dir": r"H:\Biye\Data\Model\TJ\modelfile\Flood",
     },
     "js": {
         "name": "尖山",
         "station_csv": r"H:\Biye\Data\Model\JS\modelfile\StationProperty.csv",
         "watershed_shp": r"H:\Biye\Data\Model\JS\watersh.shp",
+        "flood_dir": r"H:\Biye\Data\Model\JS\modelfile\Flood",
     },
     "hzk": {
         "name": "河子口",
         "station_csv": r"H:\Biye\Data\Model\HZK\modelfile\StationProperty.csv",
         "watershed_shp": r"H:\Biye\Data\Model\HZK\GIS_Data\HZK.shp",
+        "flood_dir": r"H:\Biye\Data\Model\HZK\modelfile\Flood",
     },
     "bpz": {
         "name": "白盆珠水库",
         "station_csv": r"H:\Biye\Data\Model\BPZ\modelfile\StationProperty.csv",
         "watershed_shp": r"H:\Biye\Data\Model\BPZ\watersh.shp",
+        "flood_dir": r"H:\Biye\Data\Model\BPZ\modelfile\Flood",
     },
 }
 

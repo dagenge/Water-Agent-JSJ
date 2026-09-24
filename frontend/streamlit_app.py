@@ -20,6 +20,7 @@ from agent.executor import run_agent
 from agent.tools import _safe_query, query_dqh_events, query_dqh_rainfall, query_dqh_statistics, query_btpzh_rainfall, query_btpzh_statistics
 from knowledge.knowledge_tools import query_basin_topology
 from agent.config import BTPZH_SHP, DQH_SHP, ANALYSIS_OUTPUT_DIR, GUANGDONG_BASINS
+from monitoring_dashboard import render_monitoring
 
 st.set_page_config(
     page_title="流域水文智能 Agent",
@@ -498,7 +499,7 @@ def main():
         f"{datetime.now().strftime('%Y-%m-%d %H:%M')}"
     )
 
-    tabs = st.tabs(["🌏 流域总览", "💬 智能对话", "📊 流域历史事件", "📈 BtPzh 时序", "🧪 代码沙盒"])
+    tabs = st.tabs(["🌏 流域总览", "💬 智能对话", "📊 流域历史事件", "📈 BtPzh 时序", "🧪 代码沙盒", "📊 系统监控"])
     with tabs[0]:
         render_overview()
     with tabs[1]:
@@ -509,6 +510,8 @@ def main():
         render_btpzh()
     with tabs[4]:
         render_sandbox()
+    with tabs[5]:
+        render_monitoring()
 
 
 if __name__ == "__main__":

@@ -64,7 +64,7 @@ def _check_rate_limit() -> bool:
         _request_times.append(now)
         return True
 
-SYSTEM_PROMPT = f”””你是流域水文数据分析 Agent，服务于多个流域的水文数据查询和分析。
+SYSTEM_PROMPT = f"""你是流域水文数据分析 Agent，服务于多个流域的水文数据查询和分析。
 
 ## 数据概览
 - **定曲河 (dqh)**：4站（古学/得荣/热打/乡城），11个汛期小时事件（2008-2024），15个汛期日事件
@@ -79,7 +79,7 @@ SYSTEM_PROMPT = f”””你是流域水文数据分析 Agent，服务于多个
 {TOOL_CATALOG}
 
 ## 工具选择原则
-1. 用户询问”某流域/某河有哪些站点”时，使用 query_station_list(basin_id) 查询
+1. 用户询问"某流域/某河有哪些站点"时，使用 query_station_list(basin_id) 查询
 2. 广东流域（bjh/tj/js/hzk/bpz）的事件查询：
    - 事件列表：query_guangdong_events(basin_id)
    - 降雨时序（含流量Q）：query_guangdong_rainfall(basin_id, event_code)
@@ -88,7 +88,7 @@ SYSTEM_PROMPT = f”””你是流域水文数据分析 Agent，服务于多个
 4. 巴塘—攀枝花（btpzh）连续时序：query_btpzh_rainfall / query_btpzh_statistics
 5. 先用查询类工具获取数据，确认数据存在后再做分析
 6. 复杂统计或图表分析优先使用 execute_python_analysis
-7. 用户要求”计算并绘图”时，尽量在一次 execute_python_analysis 调用中完成读取、统计和绘图，避免重复执行相同分析
+7. 用户要求"计算并绘图"时，尽量在一次 execute_python_analysis 调用中完成读取、统计和绘图，避免重复执行相同分析
 8. 禁止编造数据；数据缺失时明确告知
 9. 工具调用总次数不超过 8 次，避免重复调用同一工具
 
@@ -101,7 +101,7 @@ SYSTEM_PROMPT = f”””你是流域水文数据分析 Agent，服务于多个
 - 表格用 Markdown 格式
 - 数字保留合理精度（降雨 mm 保留 1 位小数，流量 m³/s 保留 2 位小数）
 - 中文回答
-- 如生成了图片，在回答末尾附上 [FIGURE] 路径”””
+- 如生成了图片，在回答末尾附上 [FIGURE] 路径"""
 
 
 # ─── 任务规划（Plan-Then-Execute 的 Plan 阶段）──────────────
@@ -117,7 +117,7 @@ def decompose_task(user_input: str, intent: str) -> list[str]:
 {TOOL_CATALOG}
 
 将任务拆解为 1~4 个有序具体步骤，每步一句话说明调用哪个真实工具、做什么操作。
-只能使用清单中的工具名，禁止写“空间查询工具”“结果输出工具”等未注册的泛化工具。
+只能使用清单中的工具名，禁止写"空间查询工具""结果输出工具"等未注册的泛化工具。
 如果任务需要代码计算和绘图，规划为一次 execute_python_analysis 完成读取、计算和绘图，除非代码执行失败才追加调用。
 仅输出步骤，每步一行，不加序号或前缀。"""
     try:

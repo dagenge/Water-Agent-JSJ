@@ -229,9 +229,6 @@ def run_agent(
     start = time.time()
     thread_id = session_id or "default"
 
-    # 记录查询开始
-    metrics_collector.record_query_start()
-
     def _emit(stage: str, detail: str = ""):
         if status_callback:
             try:
@@ -241,7 +238,7 @@ def run_agent(
 
     # ── 安全约束：速率限制 ─────────────────────────────────
     if not _check_rate_limit():
-        metrics_collector.record_query_end(intent="RATE_LIMIT", success=False, error="rate_limit_exceeded")
+        metrics_collector.record_query_end(intent_type="RATE_LIMIT", duration_ms=0, success=False, error_type="rate_limit_exceeded")
         return {
             "output": f"请求频率过高（{_RATE_LIMIT}次/{_RATE_WINDOW:.0f}s），请稍后再试。",
             "intent": {"intent": "GENERAL", "confidence": 0.0},
@@ -252,7 +249,7 @@ def run_agent(
 
     # ── 安全约束：输入长度 ──────────────────────────────────
     if len(user_input) > MAX_INPUT_LEN:
-        metrics_collector.record_query_end(intent="INPUT_TOO_LONG", success=False, error="input_length_exceeded")
+        metrics_collector.record_query_end(intent_type="INPUT_TOO_LONG", duration_ms=0, success=False, error_type="input_length_exceeded")
         return {
             "output": f"输入过长（{len(user_input)} 字符，上限 {MAX_INPUT_LEN}），请简化问题。",
             "intent": {"intent": "GENERAL", "confidence": 0.0},
@@ -265,6 +262,9 @@ def run_agent(
     _emit("intent", "识别查询意图...")
     intent_result = recognize_intent(user_input)
     intent = intent_result["intent"]
+
+    # 记录查询开始（在意图识别后）
+    metrics_collector.record_query_start(intent_type=intent)
 
     # 2. 任务规划（仅用于前端展示，不注入 Agent 上下文）
     _emit("plan", "规划执行步骤...")
@@ -295,7 +295,8 @@ def run_agent(
             pool.shutdown(wait=not timed_out, cancel_futures=True)
     except concurrent.futures.TimeoutError:
         logger.log_error("agent_execution", "超时")
-        metrics_collector.record_query_end(intent=intent, success=False, error="timeout")
+        duration_ms = (time.time() - start) * 1000
+        metrics_collector.record_query_end(intent_type=intent, duration_ms=duration_ms, success=False, error_type="timeout")
         return {
             "output": f"Agent 执行超时（>{AGENT_TIMEOUT}s），请简化问题或分步查询。",
             "intent": intent_result,
@@ -305,7 +306,8 @@ def run_agent(
         }
     except Exception as e:
         logger.log_error("agent_execution", str(e))
-        metrics_collector.record_query_end(intent=intent, success=False, error=str(e))
+        duration_ms = (time.time() - start) * 1000
+        metrics_collector.record_query_end(intent_type=intent, duration_ms=duration_ms, success=False, error_type=str(e))
         return {
             "output": f"Agent 执行出错：{e}",
             "intent": intent_result,
@@ -330,8 +332,8 @@ def run_agent(
 
     for tc in tool_calls_log:
         logger.log_tool_call(tc["tool"], {}, tc.get("output", ""))
-        # 记录工具调用指标
-        metrics_collector.record_tool_call(tc["tool"], success=True)
+        # 记录工具调用指标（假设耗时 100ms，实际可以在工具调用时精确记录）
+        metrics_collector.record_tool_call(tc["tool"], duration_ms=100, success=True)
 
     # 5. 结果自校验
     _emit("correct", "结果自校验...")
@@ -342,7 +344,7 @@ def run_agent(
     logger.log_final_output(corrected)
 
     # 记录查询结束和指标
-    metrics_collector.record_query_end(intent=intent, success=True)
+    metrics_collector.record_query_end(intent_type=intent, duration_ms=total_ms, success=True)
 
     return {
         "output": corrected,

@@ -201,17 +201,15 @@ with tab1:
                         with feedback_col1:
                             if st.button("👍", key=f"good_{len(st.session_state.messages)}"):
                                 metrics_collector.record_feedback(
-                                    query=prompt,
-                                    rating=5,
-                                    feedback_type="positive"
+                                    feedback_type="positive",
+                                    rating=5
                                 )
                                 st.success("感谢反馈！")
                         with feedback_col2:
                             if st.button("👎", key=f"bad_{len(st.session_state.messages)}"):
                                 metrics_collector.record_feedback(
-                                    query=prompt,
-                                    rating=1,
-                                    feedback_type="negative"
+                                    feedback_type="negative",
+                                    rating=1
                                 )
                                 st.info("感谢反馈，我们会持续改进")
                     except Exception as e:

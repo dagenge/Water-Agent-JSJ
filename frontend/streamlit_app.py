@@ -202,6 +202,11 @@ def render_chat():
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
+    # 为每个 Streamlit 会话生成唯一 session_id（MemorySaver 通过 thread_id 隔离历史）
+    if "chat_session_id" not in st.session_state:
+        import uuid
+        st.session_state.chat_session_id = f"streamlit_{uuid.uuid4().hex[:8]}"
+
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
@@ -221,9 +226,8 @@ def render_chat():
             icons = {"intent": "🔍", "plan": "📋", "tools": "🔧", "correct": "✅"}
             status_box.info(f"{icons.get(stage, '⏳')} {detail}")
 
-        # 传递对话历史（不含当前轮）
-        history = st.session_state.messages[:-1]
-        result = run_agent(user_input, chat_history=history, status_callback=update_status)
+        # 使用 session_id 让 MemorySaver 管理历史，不传递 chat_history
+        result = run_agent(user_input, session_id=st.session_state.chat_session_id, status_callback=update_status)
         status_box.empty()
 
         output = result["output"]

@@ -30,6 +30,11 @@ os.makedirs(ANALYSIS_OUTPUT_DIR, exist_ok=True)
 BASIN_NAME_MAP = {
     "dqh": "定曲河",
     "btpzh": "巴塘—攀枝花",
+    "bjh": "布吉河",
+    "tj": "棠荆",
+    "js": "尖山",
+    "hzk": "河子口",
+    "bpz": "白盆珠水库",
 }
 
 # 原始数据路径（初始化数据库时使用）
@@ -39,6 +44,36 @@ BTPZH_HOURLY_XLSX = r"H:\LMScore\lms-core\resources\Biye\BtPzh\降雨数据_巴�
 BTPZH_DAILY_XLSX = r"H:\LMScore\lms-core\resources\Biye\BtPzh\降雨数据_巴塘到攀枝花_日尺度(小时求和).xlsx"
 DQH_SHP = r"H:\JSJ\研二下项目\工程文件\DQHshp.shp"
 BTPZH_SHP = r"H:\LMScore\lms-core\resources\Biye\ArcGIS数据\BtPzh.shp"
+
+# 广东流域配置
+GUANGDONG_BASINS = {
+    "bjh": {
+        "name": "布吉河",
+        "station_csv": r"H:\Biye\Data\Model\BJH\modelfile\StationProperty.csv",
+        "watershed_shp": r"H:\Biye\Data\Model\BJH\watersh.shp",
+    },
+    "tj": {
+        "name": "棠荆",
+        "station_csv": r"H:\Biye\Data\Model\TJ\modelfile\StationProperty.csv",
+        "watershed_shp": r"H:\Biye\Data\Model\TJ\watersh.shp",
+    },
+    "js": {
+        "name": "尖山",
+        "station_csv": r"H:\Biye\Data\Model\JS\modelfile\StationProperty.csv",
+        "watershed_shp": r"H:\Biye\Data\Model\JS\watersh.shp",
+    },
+    "hzk": {
+        "name": "河子口",
+        "station_csv": r"H:\Biye\Data\Model\HZK\modelfile\StationProperty.csv",
+        "watershed_shp": r"H:\Biye\Data\Model\HZK\GIS_Data\HZK.shp",
+    },
+    "bpz": {
+        "name": "白盆珠水库",
+        "station_csv": r"H:\Biye\Data\Model\BPZ\modelfile\StationProperty.csv",
+        "watershed_shp": r"H:\Biye\Data\Model\BPZ\watersh.shp",
+    },
+}
+
 
 
 def build_llm(temperature: float = 0.1, max_tokens: int = 4096) -> ChatOpenAI:

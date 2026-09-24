@@ -19,17 +19,33 @@ from shapely import simplify as shapely_simplify
 from agent.executor import run_agent
 from agent.tools import _safe_query, query_dqh_events, query_dqh_rainfall, query_dqh_statistics, query_btpzh_rainfall, query_btpzh_statistics
 from knowledge.knowledge_tools import query_basin_topology
-from agent.config import BTPZH_SHP, DQH_SHP, ANALYSIS_OUTPUT_DIR
+from agent.config import BTPZH_SHP, DQH_SHP, ANALYSIS_OUTPUT_DIR, GUANGDONG_BASINS
 
 st.set_page_config(
-    page_title="金沙江流域水文智能 Agent",
+    page_title="流域水文智能 Agent",
     page_icon="🏔",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-BASIN_COLORS = {"定曲河": "#0d6efd", "巴塘—攀枝花": "#198754"}
-BASIN_ID_MAP = {"定曲河": "dqh", "巴塘—攀枝花": "btpzh"}
+BASIN_COLORS = {
+    "定曲河": "#0d6efd",
+    "巴塘—攀枝花": "#198754",
+    "布吉河": "#dc3545",
+    "棠荆": "#fd7e14",
+    "尖山": "#6f42c1",
+    "河子口": "#20c997",
+    "白盆珠水库": "#0dcaf0",
+}
+BASIN_ID_MAP = {
+    "定曲河": "dqh",
+    "巴塘—攀枝花": "btpzh",
+    "布吉河": "bjh",
+    "棠荆": "tj",
+    "尖山": "js",
+    "河子口": "hzk",
+    "白盆珠水库": "bpz",
+}
 
 
 # ─── 工具函数 ────────────────────────────────────────────────
@@ -64,12 +80,14 @@ def parse_md_table(text: str) -> pd.DataFrame | None:
 def render_overview():
     st.header("🏔 流域总览")
 
+    # 金沙江流域
+    st.subheader("金沙江流域")
     cols = st.columns(2)
-    meta = {
+    jsj_meta = {
         "定曲河": {"id": "dqh", "type": "山区源头支流", "stations": 4, "hourly_events": 11, "daily_events": 15, "period": "2008–2024（汛期）"},
         "巴塘—攀枝花": {"id": "btpzh", "type": "金沙江干流区间", "stations": 73, "hourly_events": "连续小时", "daily_events": "连续日", "period": "2010-12 ~ 2024-08"},
     }
-    for i, (name, info) in enumerate(meta.items()):
+    for i, (name, info) in enumerate(jsj_meta.items()):
         color = BASIN_COLORS[name]
         with cols[i]:
             st.markdown(f"""
@@ -80,6 +98,22 @@ def render_overview():
                 <small>🗓 {info['period']}</small>
             </div>""", unsafe_allow_html=True)
 
+    # 广东流域
+    st.subheader("广东流域")
+    gd_names = ["布吉河", "棠荆", "尖山", "河子口", "白盆珠水库"]
+    gd_cols = st.columns(5)
+    for i, name in enumerate(gd_names):
+        bid = BASIN_ID_MAP[name]
+        color = BASIN_COLORS[name]
+        stations = _safe_query("SELECT COUNT(*) as cnt FROM station_metadata WHERE basin_id=?", (bid,))
+        station_count = stations[0]["cnt"] if stations else 0
+        with gd_cols[i]:
+            st.markdown(f"""
+            <div style="padding:12px;border-radius:8px;border-left:4px solid {color};background:#f8f9fa;">
+                <strong style="color:{color};font-size:14px">{name}</strong><br>
+                <small>📡 {station_count} 站</small>
+            </div>""", unsafe_allow_html=True)
+
     st.divider()
 
     selected = st.multiselect("选择流域显示（可多选）", list(BASIN_ID_MAP.keys()), default=["定曲河"])
@@ -87,6 +121,10 @@ def render_overview():
         return
 
     shp_map = {"定曲河": DQH_SHP, "巴塘—攀枝花": BTPZH_SHP}
+    for basin_name in ["布吉河", "棠荆", "尖山", "河子口", "白盆珠水库"]:
+        bid = BASIN_ID_MAP[basin_name]
+        shp_map[basin_name] = GUANGDONG_BASINS[bid]["watershed_shp"]
+
     geo_layers, marker_js, all_lats, all_lons = [], [], [], []
 
     for name in selected:
@@ -202,55 +240,125 @@ def render_chat():
     st.session_state.messages.append({"role": "assistant", "content": output})
 
 
-# ─── Tab 3：DQH 事件查询 ─────────────────────────────────────
+# ─── Tab 3：流域历史事件查询 ─────────────────────────────────────
 
 def render_dqh():
-    st.header("📊 定曲河事件查询")
+    st.header("📊 流域历史事件查询")
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        resolution = st.selectbox("时间分辨率", ["hourly", "daily"])
+        # 流域选择
+        basin_opts = ["定曲河 (dqh)", "布吉河 (bjh)", "棠荆 (tj)", "尖山 (js)", "白盆珠水库 (bpz)"]
+        basin_sel = st.selectbox("选择流域", basin_opts)
+        basin_id = basin_sel.split("(")[1].strip(")")
+
     with c2:
-        events_raw = query_dqh_events.invoke({"resolution": resolution})
-        event_codes = re.findall(r"\b(\d{8,12})\b", events_raw)
-        event_code = st.selectbox("汛期事件", event_codes if event_codes else ["—"])
+        resolution = st.selectbox("时间分辨率", ["hourly", "daily"])
+
     with c3:
-        stations = _safe_query("SELECT station_id, name_cn FROM station_metadata WHERE basin_id='dqh'")
-        st_opts = ["全部"] + [f"{s['station_id']} {s['name_cn']}" for s in stations]
-        st_sel = st.selectbox("站点", st_opts)
+        # 根据流域动态查询事件
+        if basin_id == "dqh":
+            events_raw = query_dqh_events.invoke({"resolution": resolution})
+            event_codes = re.findall(r"\b(\d{8,12})\b", events_raw)
+        else:
+            # 广东流域：列出Flood目录下的CSV文件
+            flood_dir = GUANGDONG_BASINS[basin_id]["station_csv"].replace("StationProperty.csv", "Flood")
+            if os.path.exists(flood_dir):
+                event_codes = sorted([f.replace(".csv", "") for f in os.listdir(flood_dir) if f.endswith(".csv") and re.match(r"\d{10}", f[:10])])
+            else:
+                event_codes = []
+
+        event_code = st.selectbox("汛期事件", event_codes if event_codes else ["—"])
+
+    # 站点选择
+    stations = _safe_query("SELECT station_id, name_cn FROM station_metadata WHERE basin_id=?", (basin_id,))
+    st_opts = ["全部"] + [f"{s['station_id']} {s['name_cn']}" for s in stations]
+    st_sel = st.selectbox("站点", st_opts)
 
     if st.button("查询", type="primary"):
         sid = "" if st_sel == "全部" else st_sel.split()[0]
-        # 持久化查询结果到 session_state，避免 Streamlit 重渲染时消失
-        st.session_state["dqh_query"] = {
+        st.session_state["event_query"] = {
+            "basin_id": basin_id,
             "event_code": event_code,
             "resolution": resolution,
             "sid": sid,
         }
 
-    if "dqh_query" in st.session_state and isinstance(st.session_state["dqh_query"], dict):
-        q = st.session_state["dqh_query"]
+    if "event_query" in st.session_state and isinstance(st.session_state["event_query"], dict):
+        q = st.session_state["event_query"]
         tab_rain, tab_stat = st.tabs(["时序数据", "降雨统计"])
+
         with tab_rain:
-            raw = query_dqh_rainfall.invoke({
-                "event_code": q["event_code"], "resolution": q["resolution"],
-                "station_id": q["sid"], "limit": 2000,
-            })
-            st.markdown(raw[:3000])
+            # 查询时序数据
+            if q["basin_id"] == "dqh":
+                raw = query_dqh_rainfall.invoke({
+                    "event_code": q["event_code"], "resolution": q["resolution"],
+                    "station_id": q["sid"], "limit": 2000,
+                })
+            else:
+                # 广东流域：读取CSV文件
+                flood_csv = GUANGDONG_BASINS[q["basin_id"]]["station_csv"].replace("StationProperty.csv", f"Flood/{q['event_code']}.csv")
+                if os.path.exists(flood_csv):
+                    df_raw = pd.read_csv(flood_csv, encoding="utf-8")
+                    raw = f"## {GUANGDONG_BASINS[q['basin_id']]['name']} {q['event_code']} 事件数据\n" + df_raw.head(200).to_markdown(index=False)
+                else:
+                    raw = f"未找到事件 {q['event_code']} 的数据文件"
+
+            # 表格展开/收起
             df = parse_md_table(raw)
-            if df is not None and "TIME" in df.columns:
-                rain_cols = [c for c in df.columns if c != "TIME"]
-                fig = make_subplots(specs=[[{"secondary_y": True}]])
-                for col in rain_cols:
-                    vals = pd.to_numeric(df[col], errors="coerce")
-                    fig.add_trace(go.Bar(x=df["TIME"], y=vals, name=col, opacity=0.7), secondary_y=True)
-                fig.update_layout(title=f"定曲河 {q['event_code']} 降雨过程线", height=380,
-                                  barmode="stack", hovermode="x unified")
-                fig.update_yaxes(title_text="降雨 (mm)", secondary_y=True, autorange="reversed")
-                st.plotly_chart(fig, use_container_width=True)
+            if df is not None and len(df) > 20:
+                show_full = st.checkbox("展开完整表格", value=False)
+                if show_full:
+                    st.markdown(raw)
+                else:
+                    st.markdown(raw[:1500] + "\n\n_（表格已截断，勾选上方复选框查看完整数据）_")
+            else:
+                st.markdown(raw[:3000])
+
+            # 降雨过程线
+            if df is not None:
+                # DQH 流域有 TIME 列，广东流域只有 ID 列
+                x_col = "TIME" if "TIME" in df.columns else "ID"
+                rain_cols = [c for c in df.columns if c not in [x_col, "Q"]]
+
+                if rain_cols:
+                    fig = make_subplots(specs=[[{"secondary_y": True}]])
+                    for col in rain_cols:
+                        vals = pd.to_numeric(df[col], errors="coerce")
+                        fig.add_trace(go.Bar(x=df[x_col], y=vals, name=col, opacity=0.7), secondary_y=True)
+
+                    basin_name = GUANGDONG_BASINS.get(q['basin_id'], {}).get('name', '定曲河') if q['basin_id'] != 'dqh' else '定曲河'
+                    fig.update_layout(
+                        title=f"{basin_name} {q['event_code']} 降雨过程线",
+                        height=380,
+                        barmode="stack",
+                        hovermode="x unified"
+                    )
+                    fig.update_xaxes(title_text="时间步" if x_col == "ID" else "时间")
+                    fig.update_yaxes(title_text="降雨 (mm)", secondary_y=True, autorange="reversed")
+                    st.plotly_chart(fig, use_container_width=True)
 
         with tab_stat:
-            raw2 = query_dqh_statistics.invoke({"event_code": q["event_code"], "resolution": q["resolution"]})
+            if q["basin_id"] == "dqh":
+                raw2 = query_dqh_statistics.invoke({"event_code": q["event_code"], "resolution": q["resolution"]})
+            else:
+                # 广东流域：计算统计
+                if os.path.exists(flood_csv):
+                    df_raw = pd.read_csv(flood_csv, encoding="utf-8")
+                    rain_cols = [c for c in df_raw.columns if c not in ["ID", "Q", "TIME"]]
+                    stats = []
+                    for col in rain_cols:
+                        vals = pd.to_numeric(df_raw[col], errors="coerce")
+                        stats.append({
+                            "站点": col,
+                            "累计雨量(mm)": vals.sum(),
+                            "最大时段雨量(mm)": vals.max(),
+                            "有雨时次": (vals > 0).sum()
+                        })
+                    raw2 = f"## {GUANGDONG_BASINS[q['basin_id']]['name']} {q['event_code']} 降雨统计\n" + pd.DataFrame(stats).to_markdown(index=False)
+                else:
+                    raw2 = "数据文件不存在"
+
             st.markdown(raw2)
             df2 = parse_md_table(raw2)
             if df2 is not None and "累计雨量(mm)" in df2.columns:
@@ -279,15 +387,15 @@ def render_btpzh():
     sel_stations = st.multiselect("选择站点（留空=全部，全部时仅返回前200行）", st_names,
                                   default=["奔子栏", "石鼓", "阿海水文站"])
 
-    if st.button("查询", type="primary", key="btpzh_query"):
-        st.session_state["btpzh_query"] = {
+    if st.button("查询", type="primary", key="btpzh_query_btn"):
+        st.session_state["btpzh_query_data"] = {
             "start": str(start), "end": str(end),
             "resolution": resolution,
             "station_str": ",".join(sel_stations),
         }
 
-    if "btpzh_query" in st.session_state and isinstance(st.session_state["btpzh_query"], dict):
-        q = st.session_state["btpzh_query"]
+    if "btpzh_query_data" in st.session_state and isinstance(st.session_state["btpzh_query_data"], dict):
+        q = st.session_state["btpzh_query_data"]
         tab_ts, tab_stat = st.tabs(["时序数据", "统计"])
 
         with tab_ts:
@@ -376,14 +484,14 @@ save_fig('dqh_2009_areal_rain.png')
 # ─── 主入口 ──────────────────────────────────────────────────
 
 def main():
-    st.title("🏔 金沙江流域水文智能 Agent")
+    st.title("🏔 流域水文智能 Agent")
     st.caption(
         f"基座模型: DeepSeek | 框架: LangChain + LangGraph | "
-        f"RAG: BGE-small-zh + BM25 + RRF | 流域: DQH + BtPzh | "
+        f"RAG: BGE-small-zh + BM25 + RRF | 流域: DQH + BtPzh + GD | "
         f"{datetime.now().strftime('%Y-%m-%d %H:%M')}"
     )
 
-    tabs = st.tabs(["🌏 流域总览", "💬 智能对话", "📊 DQH 事件", "📈 BtPzh 时序", "🧪 代码沙盒"])
+    tabs = st.tabs(["🌏 流域总览", "💬 智能对话", "📊 流域历史事件", "📈 BtPzh 时序", "🧪 代码沙盒"])
     with tabs[0]:
         render_overview()
     with tabs[1]:

@@ -34,7 +34,7 @@ from agent.config import DATABASE_PATH, BASIN_NAME_MAP, ANALYSIS_OUTPUT_DIR
 # ─── 安全约束常量 ─────────────────────────────────────────────
 
 # SQL 查询 allowlist：只允许这些 basin_id / resolution 值拼入表名
-VALID_BASINS = {"dqh", "btpzh"}
+VALID_BASINS = {"dqh", "btpzh", "bjh", "tj", "js", "hzk", "bpz"}
 VALID_RESOLUTIONS = {"hourly", "daily"}
 # event_code 只允许纯数字（8~12 位）
 _EVENT_CODE_RE = re.compile(r"^\d{8,12}$")

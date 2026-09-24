@@ -1,91 +1,116 @@
 # 流域水文智能 Agent
 
-基于 LangGraph + PostgreSQL + Prometheus + Grafana 的生产级智能水文数据分析系统。
+基于 LangGraph + DeepSeek + RAG 的多流域智能水文数据分析系统。
 
 ## 🎯 项目特点
 
-- **智能对话**：基于 LangGraph ReAct Agent，支持多轮对话记忆
-- **混合检索**：FAISS 语义搜索 + BM25 关键词 + RRF 融合
-- **生产监控**：Prometheus 指标采集 + Grafana 可视化面板
-- **向量存储**：PostgreSQL + pgvector 扩展，IVFFlat 索引
-- **容器化部署**：Docker Compose 一键启动全栈服务
+- **智能对话**：基于 LangGraph ReAct Agent，支持多轮对话记忆（MemorySaver checkpointer）
+- **多流域支持**：覆盖金沙江（DQH + BtPzh）和广东 5 个流域，共 121 个水文站点
+- **混合检索**：BGE-small-zh 语义搜索 + BM25 关键词 + RRF 融合排序
+- **代码执行沙盒**：隔离进程执行 Python 分析代码（pandas/matplotlib），支持复杂统计和可视化
+- **生产监控**：Prometheus 指标采集 + Grafana 实时面板，覆盖响应时间/工具调用/错误率
+- **可视化界面**：Streamlit 前端，支持地图展示（Leaflet）、事件查询、降雨过程线绘制
 
 ## 🏗️ 架构设计
 
 ```
 ├── Agent 层
-│   ├── 意图识别 (6 类零样本分类)
-│   ├── 任务规划 (Plan-Then-Execute)
-│   ├── ReAct 循环 (LangGraph + MemorySaver)
-│   └── 结果自校验 (一致性验证)
+│   ├── 意图识别 (6 类零样本分类：RAIN_QUERY/STAT_ANALYSIS/CORRELATION/REPORT_GEN/BASIN_QUERY/GENERAL)
+│   ├── 任务规划 (Plan-Then-Execute，LLM 拆解为有序子步骤)
+│   ├── ReAct 循环 (LangGraph create_react_agent + MemorySaver 跨轮次记忆)
+│   └── 结果自校验 (对照工具返回值验证数字准确性)
+│
+├── 工具层 (8 个数据查询工具 + 1 个代码执行工具)
+│   ├── query_basin_list           # 列出所有流域
+│   ├── query_station_list         # 查询站点列表
+│   ├── query_dqh_events           # 查询 DQH 汛期事件
+│   ├── query_dqh_rainfall         # 查询 DQH 事件降雨时序
+│   ├── query_dqh_statistics       # 查询 DQH 事件降雨统计
+│   ├── query_btpzh_rainfall       # 按时间范围查询 BtPzh 降雨
+│   ├── query_btpzh_statistics     # BtPzh 时段统计（累计/极值）
+│   └── execute_python_analysis    # 隔离进程执行 pandas/matplotlib 代码
 │
 ├── 知识库层
-│   ├── RAG 混合检索 (FAISS + BM25 + RRF)
-│   ├── pgvector (IVFFlat 索引，O(K+N/10) 查询)
-│   └── BGE-small-zh-v1.5 (512 维中文嵌入)
+│   ├── RAG 混合检索 (BGE-small-zh + BM25 + RRF)
+│   ├── FAISS 向量索引 (512 维中文嵌入)
+│   └── 水文知识文档 (markdown 切分，元数据过滤)
 │
 ├── 数据层
-│   ├── PostgreSQL 15 (业务数据 + 向量存储)
-│   └── SQLAlchemy ORM (Basin/Station/Observation 模型)
+│   ├── SQLite 数据库 (basin_metadata / station_metadata / 事件数据表)
+│   ├── DQH: 26 张事件表 (dqh_hourly_* / dqh_daily_*)
+│   ├── BtPzh: 2 张连续时序表 (btpzh_hourly / btpzh_daily)
+│   └── 广东流域: CSV 文件 (Flood/*.csv，动态扫描)
 │
 └── 监控层
-    ├── Prometheus (15s 采集，30 天保留)
+    ├── Prometheus (意图分布/响应时间/工具调用成功率/错误率)
     ├── Grafana (8 个监控面板)
-    └── Alertmanager (告警规则)
+    └── 结构化日志 (JSON 格式，按 session_id 存储)
 ```
 
 ## 🌊 数据覆盖
 
+### 金沙江流域（2 个）
+- **定曲河 (DQH)**：4 站（古学/得荣/热打/乡城），11 个汛期小时事件（2008-2024），15 个汛期日事件
+- **巴塘—攀枝花 (BtPzh)**：73 站，连续小时数据（2010-12 ~ 2024-08），连续日数据
+
 ### 广东流域（5 个）
-- **棠荆河 (TJ)**：主要站点覆盖
-- **尖山河 (JS)**：连续时序数据
-- **河子口 (HZK)**：小时级 + 日级数据
-- **白盆珠 (BPZ)**：完整汛期记录
-- **布吉河 (BJH)**：城市水文监测
+- **布吉河 (BJH)**：5 站，城市水文监测
+- **棠荆 (TJ)**：7 站，完整汛期记录
+- **尖山 (JS)**：18 站，连续时序数据
+- **河子口 (HZK)**：7 站，小时级 + 日级数据
+- **白盆珠水库 (BPZ)**：7 站，水库调度数据
 
 ### 数据规模
-- 73 个水文站点
-- 连续小时数据（2010-12 至 2024-08）
-- 完整日数据记录
-- 15+ 个汛期事件
+- **121 个水文站点**（4 + 73 + 44）
+- **定曲河**：26 个汛期事件（11 小时 + 15 日）
+- **巴塘—攀枝花**：连续时序（2010-12 至 2024-08）
+- **广东流域**：多场次洪水过程数据
 
 ## 🚀 快速开始
 
-### 方式一：Docker 部署（推荐）
+### 前置要求
+
+- Python 3.9+
+- DeepSeek API Key（申请地址：https://platform.deepseek.com）
+
+### 安装步骤
 
 ```bash
-# 1. 配置环境变量
-cp .env.example .env
-# 编辑 .env，设置 DEEPSEEK_API_KEY
+# 1. 克隆仓库
+git clone https://github.com/your-username/Project_JSJ_Agent.git
+cd Project_JSJ_Agent
 
-# 2. 启动全栈服务
+# 2. 创建虚拟环境
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+
+# 3. 安装依赖
+pip install -r requirements.txt
+
+# 4. 配置环境变量
+cp .env.example .env
+# 编辑 .env，填入 DEEPSEEK_API_KEY
+
+# 5. 启动服务
+python scripts/start_services.py
+```
+
+### 访问服务
+
+- **Streamlit UI**: http://localhost:8501
+- **Prometheus Metrics**: http://localhost:8000/metrics
+
+### Docker 部署（可选）
+
+```bash
+# 启动全栈服务（包含 Prometheus + Grafana）
 cd docker
 docker-compose up -d
 
-# 3. 访问服务
-# Streamlit UI:  http://localhost:8501
-# Grafana:       http://localhost:3000 (admin/admin123)
-# Prometheus:    http://localhost:9090
+# 访问 Grafana: http://localhost:3000 (admin/admin123)
 ```
 
 详细部署文档：[docker/README.md](docker/README.md)
-
-### 方式二：本地开发
-
-```bash
-# 1. 安装依赖 (Python 3.9+)
-pip install -r requirements.txt
-
-# 2. 启动 PostgreSQL (Docker)
-docker-compose up -d postgres
-
-# 3. 配置环境变量
-cp .env.example .env
-# 编辑 .env，设置 DEEPSEEK_API_KEY 和数据库连接
-
-# 4. 启动服务
-python scripts/start_services.py
-```
 
 ## 📊 监控指标
 
@@ -102,45 +127,63 @@ python scripts/start_services.py
 
 ## 🔧 核心功能
 
-### 1. 智能问答
+### 1. 多流域站点查询
 
 ```python
 # 用户输入
-"查询棠荆河 2024 年 7 月最大流量"
+"查询棠荆有哪些水文站"
 
 # Agent 自动执行:
-# 1. 识别意图: QUERY_FLOW_DATA
-# 2. 调用工具: query_basin_flow(basin="TJ", year=2024, month=7)
-# 3. 提取数据: 最大流量 850 m³/s
-# 4. 自校验: 数值与数据库返回一致 ✓
+# 1. 识别意图: BASIN_QUERY
+# 2. 理解语义: "棠荆" → 棠荆流域(tj)
+# 3. 调用工具: query_station_list(basin_id="tj")
+# 4. 返回结果: 7 个站点（tj_C1~tj_C7）
 ```
 
-### 2. 文档检索 (RAG)
+### 2. 降雨统计分析
 
 ```python
 # 用户输入
-"暴雨强度公式怎么推导?"
-
-# RAG 流程:
-# 1. 查询改写: "暴雨强度-历时-频率关系 推导方法"
-# 2. 混合检索:
-#    - FAISS 语义: 余弦相似度 > 0.75 的 Top 3
-#    - BM25 关键词: TF-IDF 排序 Top 3
-# 3. RRF 融合: 按倒数排名加权合并
-# 4. LLM 生成: 基于检索上下文生成答案
-```
-
-### 3. 多站点对比分析
-
-```python
-# 用户输入
-"对比河子口和白盆珠站 2024 年汛期水位变化"
+"统计定曲河 2009050100 事件各站点累计降雨"
 
 # Agent 执行:
-# 1. 任务规划: [查询 HZK 站] → [查询 BPZ 站] → [对比分析] → [生成图表]
-# 2. 并行调用: query_station_data(station="HZK") × 2
-# 3. Python 分析: execute_python_analysis(code=...)
-# 4. 输出图表: [FIGURE] outputs/comparison_20240915_143022.png
+# 1. 识别意图: STAT_ANALYSIS
+# 2. 任务规划: [查询事件数据] → [统计计算] → [生成表格]
+# 3. 调用工具: query_dqh_statistics(event_code="2009050100", resolution="hourly")
+# 4. 输出结果: Markdown 表格 + 柱状图
+```
+
+### 3. 代码分析沙盒
+
+```python
+# 用户输入
+"计算定曲河 2009 年汛期面平均雨量过程线并绘图"
+
+# Agent 执行:
+# 1. 识别意图: STAT_ANALYSIS
+# 2. 生成代码:
+#    conn = get_conn()
+#    df = pd.read_sql("SELECT * FROM dqh_hourly_2009050100", conn)
+#    area_rain = df[['古学','得荣','热打','乡城']].mean(axis=1)
+#    plt.bar(df.index, area_rain)
+#    save_fig('areal_rain.png')
+# 3. 隔离执行: subprocess 安全沙盒（禁止 os.system/eval/网络请求）
+# 4. 返回结果: [FIGURE] outputs/areal_rain.png
+```
+
+### 4. RAG 知识问答
+
+```python
+# 用户输入
+"暴雨强度公式的参数怎么确定?"
+
+# RAG 流程:
+# 1. 查询改写: "暴雨强度公式 参数拟合 确定方法"
+# 2. 混合检索:
+#    - BGE-small-zh 语义: 余弦相似度 Top 3
+#    - BM25 关键词: TF-IDF 排序 Top 3
+# 3. RRF 融合: 按倒数排名加权合并
+# 4. LLM 生成: 基于检索上下文生成答案（引用来源文档）
 ```
 
 ## 📁 项目结构
@@ -148,44 +191,46 @@ python scripts/start_services.py
 ```
 Project_JSJ_Agent/
 ├── agent/                      # Agent 核心逻辑
-│   ├── executor.py            # ReAct Agent 执行器 (LangGraph)
-│   ├── intent.py              # 意图识别 (6 类分类)
-│   ├── tools.py               # 工具注册 (23 个工具)
-│   └── logger.py              # 结构化日志
+│   ├── executor.py            # ReAct Agent 执行器 (LangGraph + MemorySaver)
+│   ├── intent.py              # 意图识别 (6 类 LLM 分类)
+│   ├── tools.py               # 工具注册 (9 个工具)
+│   ├── config.py              # 配置常量（流域映射/路径/LLM）
+│   └── logger.py              # 结构化日志（按 session_id 存储）
 │
 ├── knowledge/                  # 知识库与检索
-│   ├── rag_engine.py          # RAG 混合检索 (FAISS + BM25 + RRF)
+│   ├── rag_engine.py          # RAG 混合检索 (BGE + BM25 + RRF)
 │   ├── knowledge_tools.py     # 知识库工具 (LangChain Tool)
-│   └── graph_engine.py        # 图谱引擎 (预留)
+│   └── docs/                  # 水文知识文档（markdown）
 │
-├── config/                     # 配置与数据模型
-│   ├── database.py            # PostgreSQL 连接池
-│   ├── models.py              # SQLAlchemy ORM 模型
-│   └── __init__.py
+├── data/                       # 数据目录
+│   ├── database/
+│   │   └── jsj_agent.db       # SQLite 数据库
+│   └── analysis_output/       # 代码执行输出目录（图表/CSV）
 │
 ├── monitoring/                 # 监控与指标
 │   ├── prometheus_metrics.py  # Prometheus 指标收集器
 │   └── exporter.py            # HTTP /metrics 端点 (端口 8000)
 │
-├── docker/                     # 容器化部署
-│   ├── docker-compose.yml     # 服务编排 (Postgres/Prometheus/Grafana/Agent)
-│   ├── Dockerfile             # Agent 应用镜像
-│   ├── docker-entrypoint.sh   # 容器启动脚本
-│   ├── postgres/init.sql      # pgvector 扩展初始化
-│   ├── prometheus/            # Prometheus 配置 + 告警规则
-│   └── grafana/               # Grafana 数据源 + 面板定义
+├── frontend/                   # Streamlit 前端
+│   ├── streamlit_app.py       # 主界面（5 个 Tab）
+│   └── static/                # Leaflet 静态资源
 │
 ├── scripts/                    # 工具脚本
-│   └── start_services.py      # 本地启动脚本 (Exporter + Streamlit)
+│   ├── start_services.py              # 启动脚本（Exporter + Streamlit）
+│   ├── import_guangdong_basins.py     # 广东流域站点数据导入
+│   └── init_database.py               # 数据库初始化
 │
-├── docs/                       # 技术文档
-│   ├── rag_construction.md           # RAG 知识库构建原理
-│   ├── rag_pgvector_architecture.md  # pgvector + IVFFlat 架构
-│   └── product_metrics_dashboard.md  # 产品指标设计 (PM 视角)
+├── docker/                     # 容器化部署（可选）
+│   ├── docker-compose.yml     # 服务编排
+│   ├── prometheus/            # Prometheus 配置
+│   └── grafana/               # Grafana 面板定义
 │
-├── streamlit_demo.py          # Streamlit 交互界面
-├── requirements.txt           # Python 依赖
-└── .env.example              # 环境变量模板
+├── logs/                       # 日志目录
+│   └── {session_id}.log       # 按会话存储的结构化日志
+│
+├── requirements.txt            # Python 依赖
+├── .env.example               # 环境变量模板
+└── README.md
 ```
 
 ## 🔗 技术栈
@@ -194,54 +239,49 @@ Project_JSJ_Agent/
 |------|---------|
 | **Agent 框架** | LangGraph 0.3, LangChain 0.3 |
 | **LLM** | DeepSeek V3 (OpenAI API 兼容) |
-| **向量检索** | FAISS-CPU 1.8, pgvector (IVFFlat) |
+| **向量检索** | FAISS-CPU 1.8 |
 | **文本嵌入** | BGE-small-zh-v1.5 (sentence-transformers) |
 | **关键词检索** | Rank-BM25 0.2 |
-| **数据库** | PostgreSQL 15 (pgvector 扩展), SQLAlchemy 2.0 |
+| **数据库** | SQLite 3.x |
+| **坐标转换** | PyProj (EPSG:32649/32650 → EPSG:4326) |
+| **地图可视化** | Leaflet.js + Shapely + GeoPandas |
 | **监控** | Prometheus, Grafana, prometheus-client |
 | **前端** | Streamlit 1.40, Plotly 6.0 |
-| **容器化** | Docker, Docker Compose |
+| **数据分析** | Pandas, NumPy, Matplotlib |
 
 ## 📖 相关文档
 
-- [RAG 知识库构建原理](docs/rag_construction.md) - 向量化、切分策略、混合检索
-- [pgvector 架构设计](docs/rag_pgvector_architecture.md) - IVFFlat 索引原理、性能优化
-- [产品指标面板设计](docs/product_metrics_dashboard.md) - 北极星指标、监控分层、PM 视角
 - [Docker 部署指南](docker/README.md) - 完整部署流程、故障排查
 
 ## 🐛 故障排查
 
-### 数据库连接失败
+### 服务无法启动
 
 ```bash
-# 检查 PostgreSQL 状态
-docker-compose ps postgres
-
-# 测试连接
-docker-compose exec postgres psql -U postgres -c "SELECT version();"
+# 检查端口占用
+netstat -ano | findstr :8501
+netstat -ano | findstr :8000
 
 # 查看日志
-docker-compose logs postgres
-```
-
-### Metrics 端点无数据
-
-```bash
-# 测试 Exporter
-curl http://localhost:8000/metrics
-
-# 检查 Prometheus targets
-# 访问 http://localhost:9090/targets
+cat logs/streamlit.log
+cat logs/prometheus_exporter.log
 ```
 
 ### Agent 响应慢
 
 1. 检查 LLM API 延迟（DeepSeek 服务状态）
-2. 查看 Grafana P95 响应时间面板
-3. 检查 PostgreSQL 查询性能：
-   ```sql
-   SELECT * FROM pg_stat_statements ORDER BY mean_exec_time DESC LIMIT 10;
-   ```
+2. 查看 Grafana P95 响应时间面板（http://localhost:3000）
+3. 检查工具调用成功率：访问 http://localhost:8000/metrics
+
+### 数据库查询失败
+
+```bash
+# 检查数据库文件
+ls -lh data/database/jsj_agent.db
+
+# 测试查询
+sqlite3 data/database/jsj_agent.db "SELECT COUNT(*) FROM station_metadata;"
+```
 
 ## 📝 扩展开发
 
@@ -249,15 +289,39 @@ curl http://localhost:8000/metrics
 
 1. 在 `agent/tools.py` 定义工具函数（使用 `@tool` 装饰器）
 2. 添加到 `ALL_TOOLS` 列表
-3. 更新 `SYSTEM_PROMPT` 中的工具说明
-4. 在 `agent/executor.py` 中记录工具调用指标
+3. 更新 `agent/executor.py` 中的 `SYSTEM_PROMPT` 工具说明
+4. 在工具调用处记录 Prometheus 指标
+
+示例：
+```python
+@tool
+def query_new_basin(basin_id: str) -> str:
+    """查询新流域的站点信息"""
+    rows = _safe_query("SELECT * FROM new_basin WHERE basin_id=?", (basin_id,))
+    return _to_md_table(rows)
+
+# 添加到 ALL_TOOLS
+ALL_TOOLS = [..., query_new_basin]
+```
 
 ### 添加新监控指标
 
 1. 在 `monitoring/prometheus_metrics.py` 定义 Counter/Histogram/Gauge
 2. 在业务代码中调用 `metrics_collector.record_xxx()`
-3. 在 `docker/prometheus/rules/alerts.yml` 添加告警规则
-4. 在 Grafana 面板中添加对应图表
+3. 在 Grafana 面板中添加对应图表
+
+示例：
+```python
+# 定义指标
+self.tool_errors = Counter(
+    'agent_tool_errors_total',
+    'Tool execution errors',
+    ['tool_name', 'error_type']
+)
+
+# 记录指标
+metrics_collector.tool_errors.labels(tool_name="query_basin", error_type="timeout").inc()
+```
 
 ## 🤝 贡献
 

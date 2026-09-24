@@ -2,8 +2,17 @@
 
 from langchain_core.tools import tool
 
-from knowledge.rag_engine import get_rag
 from knowledge.graph_engine import get_graph
+
+# 延迟导入 RAG，避免在 streamlit_app.py 启动时加载 torch
+_rag_module = None
+
+def _get_rag():
+    global _rag_module
+    if _rag_module is None:
+        from knowledge.rag_engine import get_rag as _get_rag_func
+        _rag_module = _get_rag_func
+    return _rag_module()
 
 
 @tool
@@ -11,7 +20,7 @@ def search_hydro_knowledge(query: str, basin_id: str = "") -> str:
     """搜索水文知识库（防汛预案、流域特征、水文规律等）。
     query: 搜索内容，如"洪水预警响应流程""定曲河汛期特征"。
     basin_id: 可选，dqh 或 btpzh；为空跨流域搜索。"""
-    rag = get_rag()
+    rag = _get_rag()
     bid = basin_id if basin_id else None
     result = rag.search_with_context(query, basin_id=bid, top_k=5)
     return result if result else f"未找到与「{query}」相关的水文知识。"

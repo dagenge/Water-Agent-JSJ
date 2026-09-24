@@ -20,9 +20,18 @@ import numpy as np
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 from rank_bm25 import BM25Okapi
-from sentence_transformers import SentenceTransformer
+
+# 延迟导入 sentence_transformers 避免启动时加载 torch
+_sentence_transformer = None
+
+def _get_sentence_transformer():
+    global _sentence_transformer
+    if _sentence_transformer is None:
+        from sentence_transformers import SentenceTransformer
+        _sentence_transformer = SentenceTransformer
+    return _sentence_transformer
 
 VECTOR_STORE_DIR = os.path.join(os.path.dirname(__file__), "vector_store")
 MODEL_NAME = "BAAI/bge-small-zh-v1.5"
@@ -62,6 +71,7 @@ class BGEEmbeddings(Embeddings):
     """
 
     def __init__(self, model_name: str = MODEL_NAME):
+        SentenceTransformer = _get_sentence_transformer()
         self._model = SentenceTransformer(model_name)
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:

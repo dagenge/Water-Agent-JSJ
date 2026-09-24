@@ -1,0 +1,136 @@
+# HELP python_gc_objects_collected_total Objects collected during gc
+# TYPE python_gc_objects_collected_total counter
+python_gc_objects_collected_total{generation="0"} 14043.0
+python_gc_objects_collected_total{generation="1"} 4280.0
+python_gc_objects_collected_total{generation="2"} 7993.0
+# HELP python_gc_objects_uncollectable_total Uncollectable objects found during GC
+# TYPE python_gc_objects_uncollectable_total counter
+python_gc_objects_uncollectable_total{generation="0"} 0.0
+python_gc_objects_uncollectable_total{generation="1"} 0.0
+python_gc_objects_uncollectable_total{generation="2"} 0.0
+# HELP python_gc_collections_total Number of times this generation was collected
+# TYPE python_gc_collections_total counter
+python_gc_collections_total{generation="0"} 987.0
+python_gc_collections_total{generation="1"} 87.0
+python_gc_collections_total{generation="2"} 13.0
+# HELP python_info Python platform information
+# TYPE python_info gauge
+python_info{implementation="CPython",major="3",minor="10",patchlevel="20",version="3.10.20"} 1.0
+# HELP agent_query_total Total number of agent queries
+# TYPE agent_query_total counter
+agent_query_total{intent_type="BASIN_QUERY",version="v1.0.0"} 3.0
+agent_query_total{intent_type="GENERAL",version="v1.0.0"} 2.0
+# HELP agent_query_created Total number of agent queries
+# TYPE agent_query_created gauge
+agent_query_created{intent_type="BASIN_QUERY",version="v1.0.0"} 1.790259991750636e+09
+agent_query_created{intent_type="GENERAL",version="v1.0.0"} 1.7902601668109252e+09
+# HELP agent_query_duration_seconds Agent query duration in seconds
+# TYPE agent_query_duration_seconds histogram
+agent_query_duration_seconds_bucket{intent_type="BASIN_QUERY",le="0.5",version="v1.0.0"} 0.0
+agent_query_duration_seconds_bucket{intent_type="BASIN_QUERY",le="1.0",version="v1.0.0"} 0.0
+agent_query_duration_seconds_bucket{intent_type="BASIN_QUERY",le="2.0",version="v1.0.0"} 0.0
+agent_query_duration_seconds_bucket{intent_type="BASIN_QUERY",le="5.0",version="v1.0.0"} 1.0
+agent_query_duration_seconds_bucket{intent_type="BASIN_QUERY",le="10.0",version="v1.0.0"} 2.0
+agent_query_duration_seconds_bucket{intent_type="BASIN_QUERY",le="30.0",version="v1.0.0"} 3.0
+agent_query_duration_seconds_bucket{intent_type="BASIN_QUERY",le="60.0",version="v1.0.0"} 3.0
+agent_query_duration_seconds_bucket{intent_type="BASIN_QUERY",le="+Inf",version="v1.0.0"} 3.0
+agent_query_duration_seconds_count{intent_type="BASIN_QUERY",version="v1.0.0"} 3.0
+agent_query_duration_seconds_sum{intent_type="BASIN_QUERY",version="v1.0.0"} 21.003129482269287
+agent_query_duration_seconds_bucket{intent_type="GENERAL",le="0.5",version="v1.0.0"} 0.0
+agent_query_duration_seconds_bucket{intent_type="GENERAL",le="1.0",version="v1.0.0"} 0.0
+agent_query_duration_seconds_bucket{intent_type="GENERAL",le="2.0",version="v1.0.0"} 0.0
+agent_query_duration_seconds_bucket{intent_type="GENERAL",le="5.0",version="v1.0.0"} 1.0
+agent_query_duration_seconds_bucket{intent_type="GENERAL",le="10.0",version="v1.0.0"} 2.0
+agent_query_duration_seconds_bucket{intent_type="GENERAL",le="30.0",version="v1.0.0"} 2.0
+agent_query_duration_seconds_bucket{intent_type="GENERAL",le="60.0",version="v1.0.0"} 2.0
+agent_query_duration_seconds_bucket{intent_type="GENERAL",le="+Inf",version="v1.0.0"} 2.0
+agent_query_duration_seconds_count{intent_type="GENERAL",version="v1.0.0"} 2.0
+agent_query_duration_seconds_sum{intent_type="GENERAL",version="v1.0.0"} 10.108297348022461
+# HELP agent_query_duration_seconds_created Agent query duration in seconds
+# TYPE agent_query_duration_seconds_created gauge
+agent_query_duration_seconds_created{intent_type="BASIN_QUERY",version="v1.0.0"} 1.790259995374848e+09
+agent_query_duration_seconds_created{intent_type="GENERAL",version="v1.0.0"} 1.7902601724452283e+09
+# HELP agent_query_success_total Total number of successful queries
+# TYPE agent_query_success_total counter
+agent_query_success_total{intent_type="BASIN_QUERY",version="v1.0.0"} 3.0
+agent_query_success_total{intent_type="GENERAL",version="v1.0.0"} 2.0
+# HELP agent_query_success_created Total number of successful queries
+# TYPE agent_query_success_created gauge
+agent_query_success_created{intent_type="BASIN_QUERY",version="v1.0.0"} 1.790259995374848e+09
+agent_query_success_created{intent_type="GENERAL",version="v1.0.0"} 1.7902601724452283e+09
+# HELP agent_query_error_total Total number of failed queries
+# TYPE agent_query_error_total counter
+# HELP agent_tool_call_total Total number of tool calls
+# TYPE agent_tool_call_total counter
+agent_tool_call_total{tool_name="query_station_list",version="v1.0.0"} 5.0
+agent_tool_call_total{tool_name="query_guangdong_events",version="v1.0.0"} 7.0
+agent_tool_call_total{tool_name="query_guangdong_statistics",version="v1.0.0"} 65.0
+# HELP agent_tool_call_created Total number of tool calls
+# TYPE agent_tool_call_created gauge
+agent_tool_call_created{tool_name="query_station_list",version="v1.0.0"} 1.7902599946384552e+09
+agent_tool_call_created{tool_name="query_guangdong_events",version="v1.0.0"} 1.7902600199140766e+09
+agent_tool_call_created{tool_name="query_guangdong_statistics",version="v1.0.0"} 1.7902600199140766e+09
+# HELP agent_tool_call_duration_seconds Tool call duration in seconds
+# TYPE agent_tool_call_duration_seconds histogram
+agent_tool_call_duration_seconds_bucket{le="0.1",tool_name="query_station_list"} 5.0
+agent_tool_call_duration_seconds_bucket{le="0.5",tool_name="query_station_list"} 5.0
+agent_tool_call_duration_seconds_bucket{le="1.0",tool_name="query_station_list"} 5.0
+agent_tool_call_duration_seconds_bucket{le="2.0",tool_name="query_station_list"} 5.0
+agent_tool_call_duration_seconds_bucket{le="5.0",tool_name="query_station_list"} 5.0
+agent_tool_call_duration_seconds_bucket{le="10.0",tool_name="query_station_list"} 5.0
+agent_tool_call_duration_seconds_bucket{le="+Inf",tool_name="query_station_list"} 5.0
+agent_tool_call_duration_seconds_count{tool_name="query_station_list"} 5.0
+agent_tool_call_duration_seconds_sum{tool_name="query_station_list"} 0.5
+agent_tool_call_duration_seconds_bucket{le="0.1",tool_name="query_guangdong_events"} 7.0
+agent_tool_call_duration_seconds_bucket{le="0.5",tool_name="query_guangdong_events"} 7.0
+agent_tool_call_duration_seconds_bucket{le="1.0",tool_name="query_guangdong_events"} 7.0
+agent_tool_call_duration_seconds_bucket{le="2.0",tool_name="query_guangdong_events"} 7.0
+agent_tool_call_duration_seconds_bucket{le="5.0",tool_name="query_guangdong_events"} 7.0
+agent_tool_call_duration_seconds_bucket{le="10.0",tool_name="query_guangdong_events"} 7.0
+agent_tool_call_duration_seconds_bucket{le="+Inf",tool_name="query_guangdong_events"} 7.0
+agent_tool_call_duration_seconds_count{tool_name="query_guangdong_events"} 7.0
+agent_tool_call_duration_seconds_sum{tool_name="query_guangdong_events"} 0.7
+agent_tool_call_duration_seconds_bucket{le="0.1",tool_name="query_guangdong_statistics"} 65.0
+agent_tool_call_duration_seconds_bucket{le="0.5",tool_name="query_guangdong_statistics"} 65.0
+agent_tool_call_duration_seconds_bucket{le="1.0",tool_name="query_guangdong_statistics"} 65.0
+agent_tool_call_duration_seconds_bucket{le="2.0",tool_name="query_guangdong_statistics"} 65.0
+agent_tool_call_duration_seconds_bucket{le="5.0",tool_name="query_guangdong_statistics"} 65.0
+agent_tool_call_duration_seconds_bucket{le="10.0",tool_name="query_guangdong_statistics"} 65.0
+agent_tool_call_duration_seconds_bucket{le="+Inf",tool_name="query_guangdong_statistics"} 65.0
+agent_tool_call_duration_seconds_count{tool_name="query_guangdong_statistics"} 65.0
+agent_tool_call_duration_seconds_sum{tool_name="query_guangdong_statistics"} 6.499999999999993
+# HELP agent_tool_call_duration_seconds_created Tool call duration in seconds
+# TYPE agent_tool_call_duration_seconds_created gauge
+agent_tool_call_duration_seconds_created{tool_name="query_station_list"} 1.7902599946384552e+09
+agent_tool_call_duration_seconds_created{tool_name="query_guangdong_events"} 1.7902600199140766e+09
+agent_tool_call_duration_seconds_created{tool_name="query_guangdong_statistics"} 1.7902600199140766e+09
+# HELP agent_tool_call_success_total Total number of successful tool calls
+# TYPE agent_tool_call_success_total counter
+agent_tool_call_success_total{tool_name="query_station_list"} 5.0
+agent_tool_call_success_total{tool_name="query_guangdong_events"} 7.0
+agent_tool_call_success_total{tool_name="query_guangdong_statistics"} 65.0
+# HELP agent_tool_call_success_created Total number of successful tool calls
+# TYPE agent_tool_call_success_created gauge
+agent_tool_call_success_created{tool_name="query_station_list"} 1.7902599946384552e+09
+agent_tool_call_success_created{tool_name="query_guangdong_events"} 1.7902600199140766e+09
+agent_tool_call_success_created{tool_name="query_guangdong_statistics"} 1.7902600199140766e+09
+# HELP agent_tool_call_error_total Total number of failed tool calls
+# TYPE agent_tool_call_error_total counter
+# HELP agent_consistency_check_corrections_total Number of corrections made by consistency check
+# TYPE agent_consistency_check_corrections_total counter
+agent_consistency_check_corrections_total{intent_type="BASIN_QUERY"} 1.0
+# HELP agent_consistency_check_corrections_created Number of corrections made by consistency check
+# TYPE agent_consistency_check_corrections_created gauge
+agent_consistency_check_corrections_created{intent_type="BASIN_QUERY"} 1.7902600510633748e+09
+# HELP agent_consistency_check_failures_total Number of consistency check failures
+# TYPE agent_consistency_check_failures_total counter
+# HELP agent_feedback_total Total user feedback count
+# TYPE agent_feedback_total counter
+# HELP agent_badcase_total Total badcase count
+# TYPE agent_badcase_total counter
+# HELP agent_active_sessions Number of currently active sessions
+# TYPE agent_active_sessions gauge
+agent_active_sessions 0.0
+# HELP agent_avg_tool_calls_per_query Average number of tool calls per query
+# TYPE agent_avg_tool_calls_per_query gauge
+agent_avg_tool_calls_per_query 0.0

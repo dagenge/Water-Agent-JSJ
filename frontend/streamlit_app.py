@@ -22,6 +22,10 @@ from knowledge.knowledge_tools import query_basin_topology
 from agent.config import BTPZH_SHP, DQH_SHP, ANALYSIS_OUTPUT_DIR, GUANGDONG_BASINS
 from monitoring_dashboard import render_monitoring
 
+# 启动 metrics 后台写入器（将 REGISTRY 定期写入共享文件）
+from monitoring.shared_metrics import start_metrics_writer
+start_metrics_writer()
+
 st.set_page_config(
     page_title="流域水文智能 Agent",
     page_icon="🏔",

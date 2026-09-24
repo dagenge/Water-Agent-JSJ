@@ -16,8 +16,11 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from monitoring.prometheus_metrics import metrics_collector
+from prometheus_client import generate_latest, REGISTRY
 import logging
+
+# 导入共享 metrics 读取器
+from monitoring.shared_metrics import read_metrics
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,11 +35,17 @@ class MetricsHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == '/metrics':
-            metrics_data = metrics_collector.get_metrics()
+            # 从共享文件读取 metrics（由 Streamlit 进程写入）
+            metrics_text = read_metrics()
+
+            # 如果文件为空，回退到本进程的 REGISTRY（仅包含基础 Python metrics）
+            if not metrics_text:
+                metrics_text = generate_latest(REGISTRY).decode('utf-8')
+
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
             self.end_headers()
-            self.wfile.write(metrics_data)
+            self.wfile.write(metrics_text.encode('utf-8'))
         elif self.path == '/health':
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')

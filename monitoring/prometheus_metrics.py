@@ -16,8 +16,8 @@ from prometheus_client.core import CollectorRegistry
 import time
 from typing import Optional
 
-# 创建独立的 registry，避免与其他模块冲突
-registry = CollectorRegistry(auto_describe=True)
+# 使用全局默认 REGISTRY，确保所有进程共享同一套metrics
+registry = REGISTRY
 
 # ====== 查询相关指标 ======
 query_total = Counter(

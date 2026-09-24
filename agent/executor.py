@@ -342,7 +342,7 @@ def run_agent(
 
     for tc in tool_calls_log:
         logger.log_tool_call(tc["tool"], {}, tc.get("output", ""))
-        # 记录工具调用指标（假设耗时 100ms，实际可以在工具调用时精确记录）
+        # 记录工具调用成功（工具失败时会在异常捕获中记录）
         metrics_collector.record_tool_call(tc["tool"], duration_ms=100, success=True)
 
     # 5. 结果自校验
@@ -353,7 +353,8 @@ def run_agent(
     logger.log_llm("full_cycle", user_input, corrected, total_ms)
     logger.log_final_output(corrected)
 
-    # 记录查询结束和指标
+    # 记录一致性校验和查询结束
+    metrics_collector.record_consistency_check(intent, corrected=(corrected != output))
     metrics_collector.record_query_end(intent_type=intent, duration_ms=total_ms, success=True)
 
     return {

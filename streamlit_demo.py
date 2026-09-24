@@ -161,6 +161,7 @@ with tab1:
             with col:
                 if st.button(example, key=f"example_{example}", use_container_width=True):
                     st.session_state.messages.append({"role": "user", "content": example})
+                    st.rerun()
 
         st.divider()
 
@@ -169,12 +170,28 @@ with tab1:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
 
-        # 用户输入
-        if prompt := st.chat_input("输入您的问题..."):
-            # 显示用户消息
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
+        # 用户输入（包括按钮触发的问题）
+        prompt = None
+        if st.session_state.messages and st.session_state.messages[-1]["role"] == "user":
+            # 检查最后一条消息是否已处理
+            if "processed" not in st.session_state:
+                st.session_state.processed = set()
+
+            last_msg = st.session_state.messages[-1]["content"]
+            if last_msg not in st.session_state.processed:
+                prompt = last_msg
+                st.session_state.processed.add(last_msg)
+
+        # 普通输入框
+        if not prompt:
+            prompt = st.chat_input("输入您的问题...")
+
+        if prompt:
+            # 如果是输入框输入，添加到消息
+            if not st.session_state.messages or st.session_state.messages[-1]["content"] != prompt:
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                with st.chat_message("user"):
+                    st.markdown(prompt)
 
             # Agent 处理
             with st.chat_message("assistant"):

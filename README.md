@@ -238,7 +238,7 @@ Project_JSJ_Agent/
 | 类别 | 技术选型 |
 |------|---------|
 | **Agent 框架** | LangGraph 0.3, LangChain 0.3 |
-| **LLM** | DeepSeek V3 (OpenAI API 兼容) |
+| **LLM** | DeepSeek V4 (OpenAI API 兼容) |
 | **向量检索** | PostgreSQL pgvector 扩展 |
 | **文本嵌入** | BGE-small-zh-v1.5 (sentence-transformers) |
 | **关键词检索** | Rank-BM25 0.2 |

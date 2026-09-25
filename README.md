@@ -32,11 +32,11 @@
 │
 ├── 知识库层
 │   ├── RAG 混合检索 (BGE-small-zh + BM25 + RRF)
-│   ├── FAISS 向量索引 (512 维中文嵌入)
+│   ├── PostgreSQL pgvector 扩展 (512 维中文嵌入向量存储)
 │   └── 水文知识文档 (markdown 切分，元数据过滤)
 │
 ├── 数据层
-│   ├── SQLite 数据库 (basin_metadata / station_metadata / 事件数据表)
+│   ├── PostgreSQL 数据库 (basin_metadata / station_metadata / 事件数据表)
 │   ├── DQH: 26 张事件表 (dqh_hourly_* / dqh_daily_*)
 │   ├── BtPzh: 2 张连续时序表 (btpzh_hourly / btpzh_daily)
 │   └── 广东流域: CSV 文件 (Flood/*.csv，动态扫描)
@@ -204,7 +204,7 @@ Project_JSJ_Agent/
 │
 ├── data/                       # 数据目录
 │   ├── database/
-│   │   └── jsj_agent.db       # SQLite 数据库
+│   │   └── jsj_agent.db       # PostgreSQL 数据库（已迁移）
 │   └── analysis_output/       # 代码执行输出目录（图表/CSV）
 │
 ├── monitoring/                 # 监控与指标
@@ -239,10 +239,10 @@ Project_JSJ_Agent/
 |------|---------|
 | **Agent 框架** | LangGraph 0.3, LangChain 0.3 |
 | **LLM** | DeepSeek V3 (OpenAI API 兼容) |
-| **向量检索** | FAISS-CPU 1.8 |
+| **向量检索** | PostgreSQL pgvector 扩展 |
 | **文本嵌入** | BGE-small-zh-v1.5 (sentence-transformers) |
 | **关键词检索** | Rank-BM25 0.2 |
-| **数据库** | SQLite 3.x |
+| **数据库** | PostgreSQL 14+ |
 | **坐标转换** | PyProj (EPSG:32649/32650 → EPSG:4326) |
 | **地图可视化** | Leaflet.js + Shapely + GeoPandas |
 | **监控** | Prometheus, Grafana, prometheus-client |
@@ -276,11 +276,14 @@ cat logs/prometheus_exporter.log
 ### 数据库查询失败
 
 ```bash
-# 检查数据库文件
-ls -lh data/database/jsj_agent.db
+# 检查 PostgreSQL 服务状态
+pg_ctl status -D /path/to/data
 
-# 测试查询
-sqlite3 data/database/jsj_agent.db "SELECT COUNT(*) FROM station_metadata;"
+# 测试连接
+psql -h localhost -U your_user -d jsj_agent -c "SELECT COUNT(*) FROM station_metadata;"
+
+# 查看连接数
+psql -h localhost -U your_user -d jsj_agent -c "SELECT count(*) FROM pg_stat_activity;"
 ```
 
 ## 📝 扩展开发
